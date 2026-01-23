@@ -1,4 +1,5 @@
 import { motion } from 'motion/react';
+import { siteContent } from '../../content';
 import { Terminal, Zap, Code2 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
@@ -131,22 +132,26 @@ export function Hero() {
           transition={{ delay: 1, duration: 0.8 }}
           className="flex flex-col sm:flex-row gap-4 justify-center items-stretch sm:items-center"
         >
-          <motion.button
+          <motion.a
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="w-full sm:w-auto px-8 py-3 bg-cyan-500/20 border-2 border-cyan-400 text-cyan-300 hover:bg-cyan-500/30 transition-all"
+            href="#projects"
+            className="w-full sm:w-auto px-8 py-3 bg-cyan-500/20 border-2 border-cyan-400 text-cyan-300 hover:bg-cyan-500/30 transition-all text-center"
             style={{ fontFamily: 'monospace' }}
           >
             [ EXPLORE PROJECTS ]
-          </motion.button>
-          <motion.button
+          </motion.a>
+          <motion.a
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            className="w-full sm:w-auto px-8 py-3 bg-fuchsia-500/20 border-2 border-fuchsia-400 text-fuchsia-300 hover:bg-fuchsia-500/30 transition-all"
+            href={siteContent.cvUrl}
+            download
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto px-8 py-3 bg-fuchsia-500/20 border-2 border-fuchsia-400 text-fuchsia-300 hover:bg-fuchsia-500/30 transition-all text-center"
             style={{ fontFamily: 'monospace' }}
           >
             [ DOWNLOAD CV ]
-          </motion.button>
+          </motion.a>
         </motion.div>
       </div>
 

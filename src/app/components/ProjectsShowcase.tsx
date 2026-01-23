@@ -78,7 +78,11 @@ export function ProjectsShowcase() {
   const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
 
   return (
-    <section ref={sectionRef} className="relative min-h-screen py-20 bg-gradient-to-b from-black via-purple-950/20 to-black overflow-hidden">
+    <section
+      id="projects"
+      ref={sectionRef}
+      className="relative min-h-screen py-20 bg-gradient-to-b from-black via-purple-950/20 to-black overflow-hidden scroll-mt-16"
+    >
       {/* Background effects with parallax */}
       <motion.div 
         className="absolute inset-0 opacity-10"

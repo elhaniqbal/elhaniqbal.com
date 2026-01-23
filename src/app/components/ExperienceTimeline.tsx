@@ -115,7 +115,11 @@ export function ExperienceTimeline() {
   };
 
   return (
-    <section ref={sectionRef} className="relative min-h-screen py-20 bg-gradient-to-b from-black via-gray-900 to-black overflow-hidden">
+    <section
+      id="experience"
+      ref={sectionRef}
+      className="relative min-h-screen py-20 bg-gradient-to-b from-black via-gray-900 to-black overflow-hidden scroll-mt-16"
+    >
       {/* Background grid */}
       <motion.div 
         className="absolute inset-0 opacity-10"

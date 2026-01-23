@@ -108,7 +108,11 @@ export function CoursesGalaxy() {
   const scale = useTransform(scrollYProgress, [0, 0.5, 1], [0.9, 1, 0.9]);
 
   return (
-    <section ref={sectionRef} className="relative min-h-screen py-20 bg-black overflow-hidden">
+    <section
+      id="courses"
+      ref={sectionRef}
+      className="relative min-h-screen py-20 bg-black overflow-hidden scroll-mt-16"
+    >
       {/* Starfield background */}
       <motion.div className="absolute inset-0" style={{ opacity: starOpacity }}>
         {[...Array(100)].map((_, i) => (

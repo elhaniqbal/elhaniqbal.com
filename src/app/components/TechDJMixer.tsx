@@ -152,7 +152,11 @@ export function TechDJMixer() {
   };
 
   return (
-    <section ref={sectionRef} className="relative min-h-screen py-20 bg-gradient-to-b from-black via-indigo-950/30 to-black overflow-hidden">
+    <section
+      id="stack"
+      ref={sectionRef}
+      className="relative min-h-screen py-20 bg-gradient-to-b from-black via-indigo-950/30 to-black overflow-hidden scroll-mt-16"
+    >
       {/* Background effects */}
       <motion.div className="absolute inset-0" style={{ opacity: useTransform(scrollYProgress, [0, 0.5, 1], [0.3, 1, 0.3]) }}>
         <motion.div
