@@ -1,0 +1,16 @@
+---
+import { formatDate } from '../utils/date';
+const { post } = Astro.props;
+const slug = post.id.replace(/\.mdx?$/, '');
+---
+<a class="blog-card" href={`/blog/${slug}`}>
+  <p class="blog-card-date">{formatDate(post.data.date)}</p>
+  {post.data.lastUpdated && (
+    <p class="blog-card-updated">Updated {post.data.lastUpdated}</p>
+  )}
+  <p class="blog-card-title">{post.data.title}</p>
+  <p class="blog-card-desc">{post.data.description}</p>
+  <div class="tag-list">
+    {post.data.tags.map((tag: string) => <span class="tag">{tag}</span>)}
+  </div>
+</a>

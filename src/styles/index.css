@@ -1,8 +1,0 @@
-@import './tailwind.css';
-
-/* Mobile / overflow safety */
-html, body { width: 100%; overflow-x: hidden; }
-body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
-
-/* Make sure tap highlights don't look dated on mobile */
-* { -webkit-tap-highlight-color: transparent; }

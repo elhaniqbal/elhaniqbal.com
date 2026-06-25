@@ -1,0 +1,26 @@
+---
+title: 'How I think about IAM as an infrastructure engineer'
+description: 'A practical mental model for cloud IAM: identity, permission, resource, condition, blast radius, and auditability.'
+date: '2026-04-12'
+tags: ['Cloud', 'IAM', 'Security', 'DevOps']
+draft: false
+---
+
+IAM is not just a permissions table. It is the control plane for who can change your system.
+
+When I evaluate an IAM design, I ask six questions:
+
+1. Who is the identity?
+2. What action can it perform?
+3. Which resource can it touch?
+4. Under what conditions?
+5. What is the blast radius if it is compromised?
+6. Can we audit what happened later?
+
+This framework works across GCP, AWS, Kubernetes RBAC, GitHub Actions, service accounts, and internal platform tooling.
+
+## Why this matters
+
+Many infrastructure incidents are not caused by one dramatic bug. They come from overly broad permissions, unclear ownership, weak environment separation, and credentials that outlive their purpose.
+
+A good platform engineer designs access so that the safe path is the easy path.

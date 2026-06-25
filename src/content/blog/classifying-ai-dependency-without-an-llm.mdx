@@ -1,0 +1,106 @@
+---
+title: 'Classifying AI dependency without asking an AI'
+description: 'How I built a cognitive-dependency scorer for programmer–AI transcripts using geometric signal-space gating, zero LLM calls at inference time, and a structural idea borrowed from a patent on RAG retrieval.'
+date: '2026-06-24'
+tags: ['LLMs', 'ML', 'AI Safety', 'Research', 'Python']
+draft: false
+---
+
+There is a specific pattern I kept noticing in AI-assisted coding sessions. Someone pastes a question. The AI responds with code. The person copies it, runs it, and if it compiles, moves on. Maybe the code is right. Maybe it has a subtle bug. Either way, they do not understand it much better than when they started.
+
+I started calling this vibe coding. Not because it is always bad -- sometimes you genuinely need to move fast through unfamiliar territory -- but because there is a difference between using AI to accelerate understanding and using AI as a proxy for understanding. That difference does not show up in the output. It shows up in the transcript.
+
+## The question
+
+The thing I wanted to know: can you detect which pattern is happening automatically?
+
+The obvious approach is to feed the transcript to an LLM and ask it to evaluate the conversation quality. That works fine if you do not care about cost, latency, privacy, or the epistemic weirdness of having an LLM grade its own interactions. I cared about all four.
+
+So I built a system that does not call any LLM at inference time. It extracts behavioral signals from the raw transcript text and classifies the result using geometry.
+
+## Six signals
+
+The scorer extracts six axes from a transcript:
+
+**copy_rate** measures how much of what the AI produces ends up in the user's next message. But verbatim copying is not the full story -- a cosmetic variable rename shows up as low syntactic overlap but high semantic similarity. The dual-distance approach catches both: it compares n-gram overlap against embedding similarity and uses the ratio as the signal.
+
+**pushback_rate** looks for disagreement markers -- "that won't work", "are you sure", "actually I need it to...", the same question reframed after a bad answer. People who push back are engaging with the output rather than accepting it.
+
+**ppl_div** is a proxy for the vocabulary gap between user and assistant. When the AI is consistently using more technical vocabulary than the user demonstrates, that is a signal the user may be accepting explanations significantly above their current understanding.
+
+**explain_gap** is the one that matters most. It estimates the cyclomatic complexity of code blocks the user accepts, then compares against a proxy for the user's technical depth from their own messages. Accepting code significantly more complex than your demonstrated understanding is the core dependency pattern.
+
+**oversharing** tracks whether the user is leaking sensitive data into the conversation. API keys, credentials, private keys, SSNs -- each with severity weights, mapped to [0, 1] via `1 - exp(-density)`.
+
+**prompt_q** scores the quality of each user prompt on specificity, structure, and outcome feedback. A high-quality prompt that gets a good result on the first try is different from a vague prompt that takes three re-asks.
+
+These six values form a vector. One transcript = one point in six-dimensional space.
+
+## Six archetypes
+
+Instead of training a classifier on labeled data, I defined six archetypes as anchor points:
+
+- **Pure Vibe Coder**: high copy_rate, high explain_gap, low pushback
+- **Real Engineer**: low copy_rate, high pushback, high prompt_q
+- **Skill Atrophy**: competent early signals that degrade later in the session
+- **Oversharing**: elevated oversharing signal, independent of the rest
+- **Smart Amplify**: heavy AI use but high pushback and prompt_q -- the healthy high-dependency pattern
+- **Hallucination Accepter**: accepts AI output with subtle errors, never verifies, never re-asks
+
+The anchors are not hand-specified coordinates. They are centroids computed from synthetic labeled examples run through the same signal extractor. This matters: the anchor positions live in the actual output distribution of the extractor rather than some idealized space.
+
+## The geometry
+
+Here is where it gets interesting.
+
+I was reading [US Patent 12,579,200 B1](https://patents.google.com/patent/US12579200B1) -- a Samsung Research system for ambiguity-robust document retrieval using RAG. The core idea: represent each entity as an anchor point in embedding space, and define a confidence region as a sphere with radius equal to half the distance to the nearest neighboring entity. Documents within that sphere are strongly associated with that entity; documents outside are ambiguous.
+
+The formula is:
+
+```
+radius = α × (½ × distance to nearest neighbor)
+```
+
+This has a clean property: the regions cover the space between anchors without overlapping by default. You can scale them up or down with α to trade coverage against precision. Shrink α and the regions tighten, more transcripts fall outside and escalate. Grow α and more transcripts get auto-labeled, but with lower confidence margins.
+
+I adapted this for archetype classification. Each archetype anchor gets a sphere. A transcript vector that falls clearly inside one sphere gets auto-labeled with confidence `(radius - distance) / radius`. If it falls outside all spheres or inside multiple, it escalates to human review.
+
+The RAG paper was using this to route queries to the right entity. I am using it to route behavioral patterns to the right archetype. The geometry is the same; the semantics are different.
+
+## Why not just train a classifier?
+
+A few reasons.
+
+First, labeled behavioral data does not really exist yet. There are no large datasets of programmer–AI conversations with ground-truth cognitive dependency annotations. Building the system on synthetic labeled data would let me ship something, but a trained classifier on synthetic data is going to fail in specific and unpredictable ways when it hits real transcripts.
+
+Second, the geometric approach is interpretable in a way that neural classifiers are not. You can see exactly how far a transcript is from each archetype. You can see which archetype it is closest to even when it does not clearly belong. The distances are meaningful.
+
+Third, the escalation behavior is correct by design. When the system does not know, it says so. A trained classifier would still output a probability distribution even for completely out-of-distribution inputs. The sphere gating gives a natural "I do not know" region.
+
+## The PII pass
+
+Before any of the above runs, the transcript goes through a local redaction pass. Regex patterns for emails, API keys, JWTs, connection strings. Shannon entropy for high-entropy tokens that bypass pattern matching. Optional Presidio NER for names and locations if the library is installed.
+
+This is not optional. You cannot build a tool that analyzes conversations and skip the step where you handle sensitive data in those conversations. The PII pass is why the oversharing signal can exist: it comes from analyzing what would have been redacted, not from keeping the secrets.
+
+## What the UI looks like
+
+The Streamlit interface has a transcript input, a gate decision with confidence, and three visualizations: the dependency score bar, the six signal axes, and a distance table showing how far the transcript is from each archetype region.
+
+There is also a 2D PCA projection of the signal space. You can load a transcript and see where it lands relative to the six archetype regions. At low α the spheres are small and most real transcripts end up in empty space. At high α the spheres grow until they cover most of the projected plane.
+
+The α slider makes the tradeoff visible. This is intentional. The person using the tool should be making that call, not the tool.
+
+## Honest notes
+
+The bundled archetype examples are synthetic and cleanly separable. A real programming session is messier. Real transcripts will escalate more frequently, especially on medium-dependency behavior that does not clearly match any archetype. That is the correct behavior.
+
+The signals are proxies. `ppl_div` correlates with vocabulary gap but is not a direct measure of comprehension. `explain_gap` uses cyclomatic complexity as a proxy for code difficulty. `prompt_q` measures structural features of a prompt, not whether the user understood the answer. These are reasonable heuristics, not validated psychometric measures.
+
+The system is also genuinely agnostic about whether high dependency is bad. A smart amplify pattern can show heavy AI use with high dependency scores on certain axes and still be a healthy working style. The archetypes capture patterns; the interpretation of whether a pattern is a problem is not something the tool decides.
+
+## What is next
+
+I want to validate the signal extraction against real annotated data. The synthetic examples calibrate the geometry, but they do not tell me whether the signals generalize. The next step is getting real programmer–AI conversation pairs with some form of independent annotation -- even simple things like "did this person understand what they accepted" rated after the fact.
+
+The n-sphere gating approach is also general enough to extend beyond six archetypes. As more behavioral patterns become recognizable, you add anchors. The existing regions do not need to change.

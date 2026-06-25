@@ -1,0 +1,53 @@
+---
+import BaseLayout from './BaseLayout.astro';
+const { frontmatter } = Astro.props;
+const isOngoing = frontmatter.status.toLowerCase().includes('ongoing');
+---
+<BaseLayout title={`${frontmatter.title} - Elhan Iqbal`} description={frontmatter.subtitle}>
+  <article class="case-study container">
+    <a class="back-link" href="/projects">← All projects</a>
+
+    <header class="case-header">
+      <div class="case-meta">
+        {isOngoing && <span class="ongoing-badge"><span class="ongoing-dot"></span>ongoing</span>}
+        <span>{frontmatter.status} · {frontmatter.date}</span>
+        {frontmatter.lastUpdated && <span>Updated {frontmatter.lastUpdated}</span>}
+      </div>
+      <h1>{frontmatter.title}</h1>
+      <p class="sub">{frontmatter.subtitle}</p>
+      <div class="tag-list">
+        {frontmatter.stack.map((item: string) => <span class="tag">{item}</span>)}
+      </div>
+    </header>
+
+    {frontmatter.heroImage && !frontmatter.videoUrl && (
+      <div class="hero-image">
+        <img src={frontmatter.heroImage} alt={`${frontmatter.title} preview`} loading="lazy" />
+      </div>
+    )}
+
+    {frontmatter.videoUrl && (
+      <div class="video-embed">
+        <iframe
+          src={frontmatter.videoUrl}
+          title={`${frontmatter.title} demo`}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+          loading="lazy"
+        />
+      </div>
+    )}
+
+    {frontmatter.impact.length > 0 && (
+      <div class="impact-grid">
+        {frontmatter.impact.map((item: string) => (
+          <div class="impact-card">{item}</div>
+        ))}
+      </div>
+    )}
+
+    <div class="prose">
+      <slot />
+    </div>
+  </article>
+</BaseLayout>

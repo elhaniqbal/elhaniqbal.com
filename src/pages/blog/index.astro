@@ -1,0 +1,42 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { formatDate } from '../../utils/date';
+
+const posts = (await getCollection('blog'))
+  .filter((p) => !p.data.draft)
+  .sort((a, b) => (a.data.date < b.data.date ? 1 : -1));
+---
+<BaseLayout
+  title="Blog - Elhan Iqbal"
+  description="Engineering notes on infrastructure, robotics, cloud, security, and ML privacy."
+>
+  <div class="container">
+    <div class="page-intro">
+      <span class="label">Blog</span>
+      <h1>Writing things down.</h1>
+      <p>
+        Fair warning: this is the one page where you won't find AI slop. What you'll find are
+        grammatical errors, half-baked takes, things I was wrong about the week after posting,
+        and opinions I'll probably revise. Think of it as a journal -- an engineering dump for
+        thoughts that didn't fit anywhere else. If something here is wrong, I genuinely want
+        to hear about it.
+      </p>
+    </div>
+
+    <nav class="section blog-list" aria-label="Blog posts">
+      {posts.map((post) => {
+        const slug = post.id.replace(/\.mdx?$/, '');
+        return (
+          <a class="blog-entry" href={`/blog/${slug}`}>
+            <span class="blog-entry-date">{formatDate(post.data.date)}</span>
+            <div class="blog-entry-body">
+              <div class="blog-entry-title">{post.data.title}</div>
+              <div class="blog-entry-desc">{post.data.description}</div>
+            </div>
+          </a>
+        );
+      })}
+    </nav>
+  </div>
+</BaseLayout>

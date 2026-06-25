@@ -1,0 +1,395 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import BlogCard from '../components/BlogCard.astro';
+import { site } from '../site.config';
+
+const allProjects = (await getCollection('projects')).sort((a, b) => {
+  if (a.data.featured && !b.data.featured) return -1;
+  if (!a.data.featured && b.data.featured) return 1;
+  return a.data.date < b.data.date ? 1 : -1;
+});
+const showcased = allProjects.slice(0, 3);
+
+const recentPosts = (await getCollection('blog'))
+  .filter((p) => !p.data.draft)
+  .sort((a, b) => (a.data.date < b.data.date ? 1 : -1))
+  .slice(0, 3);
+---
+<BaseLayout>
+
+  <!-- ── Hero ──────────────────────────────── -->
+  <section class="hero container">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <div id="hero-heading">
+          <span class="hero-label">Vancouver, BC</span>
+          <h1 class="hero-title">Software engineer who builds things end&#8209;to&#8209;end.</h1>
+        </div>
+        <p class="hero-desc">
+          I'm an engineering grad from UBC. I work on cloud infrastructure, backend services,
+          embedded hardware, and applied ML, usually on projects where the hard part is getting
+          layers that weren't designed to talk to each other to actually work together.
+          Currently looking for software, infrastructure, or platform engineering roles.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="/projects">See my work</a>
+          <a class="btn btn-primary" href="/blog">Read the blog</a>
+          <a class="btn btn-primary" href={site.resume} target="_blank" rel="noopener">Resume</a>
+        </div>
+        <div class="interests">
+          <span class="interest-tag">☁️ cloud infrastructure</span>
+          <span class="interest-tag">🤖 robotics</span>
+          <span class="interest-tag">🔒 privacy &amp; AI research</span>
+          <span class="interest-tag">🍳 cooking</span>
+          <span class="interest-tag">🎵 music</span>
+          <span class="interest-tag">🔧 hardware tinkering</span>
+        </div>
+      </div>
+
+      <!-- Terminal widget — edit SCRIPT in the <script> below to customise -->
+      <aside class="terminal" aria-hidden="true">
+        <div class="terminal-bar">
+          <div class="t-dots">
+            <span class="t-dot r"></span>
+            <span class="t-dot y"></span>
+            <span class="t-dot g"></span>
+          </div>
+          <span class="terminal-title">elhan — bash</span>
+        </div>
+        <div class="terminal-body" id="term-body"></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ── Projects ───────────────────────────── -->
+  {showcased.length > 0 && (
+    <section class="section container">
+      <div class="section-head">
+        <div>
+          <p class="section-label">Work</p>
+          <h2 class="section-title">A few things I've built</h2>
+        </div>
+        <a class="view-all" href="/projects">All projects →</a>
+      </div>
+      <div class="project-grid">
+        {showcased.map((project) => <ProjectCard project={project} />)}
+      </div>
+    </section>
+  )}
+
+  <!-- ── Experience ─────────────────────────── -->
+  <section class="section container">
+    <div class="section-head">
+      <div>
+        <p class="section-label">Experience</p>
+        <h2 class="section-title">Where I've worked</h2>
+      </div>
+    </div>
+
+    <div class="timeline">
+
+      <!-- 1: Left — UBC ML Research -->
+      <div class="tl-item">
+        <div class="tl-content">
+          <p class="tl-year">Jan 2026 – May 2026</p>
+          <p class="tl-role">Machine Learning Privacy Research Assistant</p>
+          <p class="tl-org">University of British Columbia</p>
+          <p class="tl-desc">
+            Trained PyTorch shadow models and implemented membership inference attacks to evaluate ML
+            privacy leakage. Improved low-FPR attack performance using statistical scoring and
+            multivariate feature analysis across confidence, entropy, margin, and loss-derived features.
+          </p>
+          <div class="tl-badges">
+            <span class="exp-badge">PyTorch</span>
+            <span class="exp-badge">Python</span>
+            <span class="exp-badge">ML Privacy</span>
+          </div>
+        </div>
+        <div class="tl-node"></div>
+        <div class="tl-space"></div>
+      </div>
+
+      <!-- 2: Right — Teaching Assistant -->
+      <div class="tl-item">
+        <div class="tl-space"></div>
+        <div class="tl-node"></div>
+        <div class="tl-content">
+          <p class="tl-year">Sep 2025 – Apr 2026 &nbsp;·&nbsp; Sep 2023 – Apr 2024</p>
+          <p class="tl-role">Teaching Assistant — Introduction to Engineering I &amp; II</p>
+          <p class="tl-org">University of British Columbia · Vancouver</p>
+          <p class="tl-desc">
+            Two separate terms as TA for a first-year engineering studio course. Received 100%
+            positive feedback by facilitating hands-on sessions and helping 150+ students survive
+            the jump from high school to engineering. Graded deliverables and invigilated exams
+            for 250+ students.
+          </p>
+          <div class="tl-badges">
+            <span class="exp-badge">Teaching</span>
+            <span class="exp-badge">Engineering Education</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3: Left — Samsung Cloud DevOps -->
+      <div class="tl-item">
+        <div class="tl-content">
+          <p class="tl-year">Jan 2025 – Aug 2025</p>
+          <p class="tl-role">Cloud DevOps Engineer Co-op</p>
+          <p class="tl-org">Samsung Electronics · Vancouver</p>
+          <p class="tl-desc">
+            Raised IaC coverage to 90%+ across 8+ GCP projects by building a Python Terraform
+            discovery, drift detection, and import pipeline for 300+ unmanaged resources. Reduced
+            Docker image size from 2 GB to 55 MB via multi-stage builds, cutting CI runtime by 65%.
+            Engineered Kubernetes deployments for internal services using Helm and GitOps. Led
+            incident response and authored RCAs for BigQuery, Grafana, and CI/CD failures.
+          </p>
+          <div class="tl-badges">
+            <span class="exp-badge">Terraform</span>
+            <span class="exp-badge">GCP</span>
+            <span class="exp-badge">Kubernetes</span>
+            <span class="exp-badge">Helm</span>
+            <span class="exp-badge">Docker</span>
+          </div>
+        </div>
+        <div class="tl-node"></div>
+        <div class="tl-space"></div>
+      </div>
+
+      <!-- 4: Right — Samsung Software Dev -->
+      <div class="tl-item">
+        <div class="tl-space"></div>
+        <div class="tl-node"></div>
+        <div class="tl-content">
+          <p class="tl-year">May 2024 – Dec 2024</p>
+          <p class="tl-role">Software Developer &amp; Technical Writer Co-op</p>
+          <p class="tl-org">Samsung Electronics · Vancouver</p>
+          <p class="tl-desc">
+            Built a TypeScript VSCode extension with AI suggestions, broken-link detection, and
+            Markdown linting across 100+ Knox B2B articles. Developed a Python automation tool
+            using Selenium, Pandas, and NLTK that cut partner request review time from 15 minutes
+            to 5 seconds. Built frontend and backend for a test analytics platform using Vue.js,
+            Flask, Docker, AWS DocumentDB, and Elasticsearch.
+          </p>
+          <div class="tl-badges">
+            <span class="exp-badge">TypeScript</span>
+            <span class="exp-badge">Python</span>
+            <span class="exp-badge">Vue.js</span>
+            <span class="exp-badge">Flask</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5: Left — UBC UAS -->
+      <div class="tl-item">
+        <div class="tl-content">
+          <p class="tl-year">Sep 2022 – Present</p>
+          <p class="tl-role">Software Developer</p>
+          <p class="tl-org">UBC Uncrewed Aircraft Systems (3rd Nationally) · Vancouver</p>
+          <p class="tl-desc">
+            Joined in 2021 as a mechanical member with essentially no idea what I was doing. Spent
+            most of that year asking questions, staring at the whole system, trying to figure out
+            how a claw would retrieve an object mid-flight. Eventually moved to software. Built a
+            TypeScript and Svelte ground control station frontend with live map view and drone
+            telemetry. Added a QR scanner that sends competition mission parameters directly to
+            the backend as JSON. Wrote Python scripts to stream video from a machine vision camera
+            over TCP and UDP for real-time mid-flight object detection.
+          </p>
+          <div class="tl-badges">
+            <span class="exp-badge">TypeScript</span>
+            <span class="exp-badge">Svelte</span>
+            <span class="exp-badge">Python</span>
+          </div>
+        </div>
+        <div class="tl-node"></div>
+        <div class="tl-space"></div>
+      </div>
+
+      <!-- 6: Right — UBC Education -->
+      <div class="tl-item">
+        <div class="tl-space"></div>
+        <div class="tl-node"></div>
+        <div class="tl-content">
+          <p class="tl-year">Sep 2021 – May 2026</p>
+          <p class="tl-role">B.ASc, Integrated Engineering</p>
+          <p class="tl-org">University of British Columbia · Vancouver</p>
+          <p class="tl-desc">
+            Computer and Electrical specialization. Courses in systems software, computer networking,
+            cybersecurity, software design, AI/ML, and blockchain. Academic Distinction;
+            Outstanding International Student Scholarship; Dean's Honor List.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── Blog ───────────────────────────────── -->
+  {recentPosts.length > 0 && (
+    <section class="section container">
+      <div class="section-head">
+        <div>
+          <p class="section-label">Writing</p>
+          <h2 class="section-title">Notes from the work</h2>
+        </div>
+        <a class="view-all" href="/blog">All posts →</a>
+      </div>
+      <div class="blog-cards">
+        {recentPosts.map((post) => <BlogCard post={post} />)}
+      </div>
+    </section>
+  )}
+
+
+<script>
+  // ── Terminal animation ─────────────────────────────────────────────────────
+  // Edit SCRIPT to change what appears. Kinds:
+  //   'cmd' — typed character by character (shows ❯ prompt)
+  //   'out' — appears instantly in muted colour
+  //   'ok'  — appears instantly in green
+  //   'gap' — small vertical gap between command groups
+  // ──────────────────────────────────────────────────────────────────────────
+  type ScriptItem =
+    | { kind: 'cmd'; text: string }
+    | { kind: 'out'; text: string }
+    | { kind: 'ok';  text: string }
+    | { kind: 'gap' };
+
+  const SCRIPT: ScriptItem[] = [
+  { kind: 'cmd', text: 'whoami' },
+  { kind: 'ok',  text: 'curious engineer, still learning the stack' },
+  { kind: 'gap' },
+
+  { kind: 'cmd', text: 'git log --oneline --graph --decorate --all' },
+  { kind: 'out', text: '* frontend polish' },
+  { kind: 'out', text: '* backend cleanup' },
+  { kind: 'out', text: '* infra fix' },
+  { kind: 'ok',  text: 'different layers, same habit: keep asking why' },
+  { kind: 'gap' },
+
+  { kind: 'cmd', text: 'terraform plan' },
+  { kind: 'out', text: 'reviewing changes before touching infrastructure' },
+  { kind: 'cmd', text: 'docker compose up -d --build' },
+  { kind: 'ok',  text: 'services are up, assumptions are not' },
+  { kind: 'gap' },
+
+  { kind: 'cmd', text: 'curl -s localhost:8080/health | jq .' },
+  { kind: 'out', text: '{ "api": "ok", "latency_ms": 42 }' },
+  { kind: 'cmd', text: 'journalctl -u api.service --since "10 min ago"' },
+  { kind: 'ok',  text: 'logs checked before guessing' },
+  { kind: 'gap' },
+
+  { kind: 'cmd', text: 'kubectl describe pod app' },
+  { kind: 'out', text: 'events, probes, resources, restarts' },
+  { kind: 'cmd', text: 'ss -tulpen | grep LISTEN' },
+  { kind: 'ok',  text: 'systems usually explain themselves if you listen' },
+  { kind: 'gap' },
+
+  { kind: 'cmd', text: 'python train.py --config experiment.yaml' },
+  { kind: 'out', text: 'loss down, questions up' },
+  { kind: 'out', text: 'metrics saved, assumptions noted' },
+  { kind: 'ok',  text: 'debugging models still means debugging thinking' },
+  { kind: 'gap' },
+
+  { kind: 'cmd', text: 'pio run && pio device monitor' },
+  { kind: 'out', text: 'firmware compiled, serial monitor open' },
+  { kind: 'cmd', text: 'i2cdetect -y 1' },
+  { kind: 'ok',  text: 'software is more interesting when it touches reality' },
+  { kind: 'gap' },
+
+  { kind: 'cmd', text: 'tcpdump -i any port 443' },
+  { kind: 'out', text: 'packets observed, mystery reduced' },
+  { kind: 'cmd', text: 'git reflog' },
+  { kind: 'ok',  text: 'mistakes are useful if you learn how to recover' },
+  { kind: 'gap' },
+
+  { kind: 'cmd', text: 'git push origin main' },
+  { kind: 'ok',  text: 'still learning, still building, still curious ✓' },
+];
+
+  // Tuning constants — adjust to taste
+  const MAX_LINES = 22;   // oldest lines scroll off above this count
+  const CHAR_MS   = 40;   // ms per character typed (±~15 ms jitter added)
+  const CMD_PAUSE = 520;  // pause after a command finishes before output appears
+  const OUT_PAUSE = 110;  // pause between output lines
+  const LOOP_PAUSE = 2200; // pause at end before restarting
+
+  function runTerminal(el: HTMLElement) {
+    el.innerHTML = '';
+    let idx = 0;
+
+    function trim() {
+      // Remove oldest lines to keep the window from growing beyond MAX_LINES
+      // children.length > MAX_LINES guarantees firstElementChild is non-null
+      while (el.children.length > MAX_LINES) el.firstElementChild!.remove();
+    }
+
+    function addLine(extraClass: string, content: string) {
+      const div = document.createElement('div');
+      div.className = 't-line' + (extraClass ? ' ' + extraClass : '');
+      div.textContent = content;
+      el.appendChild(div);
+      trim();
+    }
+
+    function next() {
+      if (idx >= SCRIPT.length) {
+        setTimeout(() => runTerminal(el), LOOP_PAUSE);
+        return;
+      }
+      const item = SCRIPT[idx++];
+
+      if (item.kind === 'gap') {
+        const sp = document.createElement('div');
+        sp.style.height = '0.25rem';
+        el.appendChild(sp);
+        trim();
+        setTimeout(next, 60);
+        return;
+      }
+
+      if (item.kind === 'out' || item.kind === 'ok') {
+        addLine(item.kind === 'ok' ? 't-ok' : 't-dim', item.text);
+        setTimeout(next, OUT_PAUSE);
+        return;
+      }
+
+      // 'cmd': type each character with a realistic delay
+      const frag = document.createDocumentFragment();
+      const prompt = document.createElement('span');
+      prompt.className = 't-prompt';
+      prompt.textContent = '❯';
+      const typed = document.createElement('span');
+      const cursor = document.createElement('span');
+      cursor.className = 't-cursor';
+      frag.appendChild(prompt);
+      frag.appendChild(typed);
+      frag.appendChild(cursor);
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 't-line';
+      wrapper.appendChild(frag);
+      el.appendChild(wrapper);
+      trim();
+
+      let ci = 0;
+      (function typeChar() {
+        if (ci < item.text.length) {
+          typed.textContent += item.text[ci++];
+          setTimeout(typeChar, CHAR_MS + (Math.random() * 28 - 14));
+        } else {
+          cursor.remove();
+          setTimeout(next, CMD_PAUSE);
+        }
+      })();
+    }
+
+    next();
+  }
+
+  const termEl = document.getElementById('term-body');
+  if (termEl) runTerminal(termEl);
+</script>
+
+</BaseLayout>

@@ -1,0 +1,107 @@
+---
+import '../styles/global.css';
+import { site } from '../site.config';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = `${site.name} — ${site.role}`,
+  description = site.pitch
+} = Astro.props;
+
+const path = Astro.url.pathname;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <!-- <meta name="keywords" content={site.keywords.join(', ')} /> -->
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="canonical" href={Astro.url.href} />
+    <meta property="og:url" content={Astro.url.href} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..700;1,14..32,300..400&family=Lora:ital,wght@0,400..600;1,400..500&family=JetBrains+Mono:wght@400;500&display=swap"
+    />
+    <title>{title}</title>
+    <script is:inline>
+      (function () {
+        var stored = localStorage.getItem('theme');
+        var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.dataset.theme = stored || (prefersDark ? 'dark' : 'light');
+      })();
+    </script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="/" aria-label="Home">
+          <span class="brand-mark">EI</span>
+          <span>{site.name}</span>
+        </a>
+        <div class="header-right">
+          <nav class="nav" aria-label="Main navigation">
+            <a class="nav-link" href="/projects" aria-current={path.startsWith('/projects') ? 'page' : undefined}>Projects</a>
+            <a class="nav-link" href="/blog" aria-current={path.startsWith('/blog') ? 'page' : undefined}>Blog</a>
+            <a class="nav-link" href="/about" aria-current={path === '/about' ? 'page' : undefined}>About</a>
+          </nav>
+          <a class="nav-contact" href={site.resume} target="_blank" rel="noopener">Resume</a>
+          <button class="theme-btn" id="theme-toggle" aria-label="Toggle color scheme" type="button"></button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <span>{site.name} · {site.role}</span>
+        <div class="footer-links">
+          <a href={site.github} target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a href={site.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn</a>
+          <a href={`mailto:${site.email}`}>Email</a>
+          <a href={site.resume}>Resume</a>
+        </div>
+      </div>
+    </footer>
+
+    <script is:inline>
+      (function () {
+        var MOON = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+        var SUN = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>';
+
+        function syncBtn() {
+          var isDark = document.documentElement.dataset.theme === 'dark';
+          var btn = document.getElementById('theme-toggle');
+          if (!btn) return;
+          btn.innerHTML = isDark ? SUN : MOON;
+          btn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+        }
+
+        syncBtn();
+
+        var btn = document.getElementById('theme-toggle');
+        if (btn) {
+          btn.addEventListener('click', function () {
+            var next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('theme', next);
+            document.documentElement.dataset.theme = next;
+            syncBtn();
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

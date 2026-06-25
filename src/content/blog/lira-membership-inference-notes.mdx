@@ -1,0 +1,19 @@
+---
+title: 'Membership inference: why low-FPR metrics matter'
+description: 'Accuracy and AUC are not enough when evaluating privacy attacks. The interesting region is often the far left of the ROC curve.'
+date: '2026-03-22'
+tags: ['ML Privacy', 'Security', 'Research', 'LiRA']
+draft: false
+---
+
+Membership inference attacks ask whether a specific example was part of a model's training data. A model can have a decent AUC while still being much more concerning in a narrow operating region.
+
+That is why low false-positive-rate metrics matter.
+
+For privacy attacks, a high true-positive rate at a very low false-positive rate can be a stronger signal than broad average performance. It means the attacker can make confident claims about a smaller set of examples.
+
+## Engineering lesson
+
+Evaluation code needs to make score orientation, thresholds, and plots explicit. I learned to check whether higher scores mean “more likely member” or “less likely member,” and to flip scores when needed before comparing ROC curves.
+
+Small evaluation mistakes can make research results look better, worse, or completely inverted.

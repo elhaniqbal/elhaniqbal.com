@@ -1,0 +1,29 @@
+---
+const { project } = Astro.props;
+const slug = project.id.replace(/\.mdx?$/, '');
+const isOngoing = project.data.status.toLowerCase().includes('ongoing');
+---
+<a class="project-card" href={`/projects/${slug}`}>
+  <div class="card-top">
+    <span class="card-status">{project.data.status}</span>
+    <div class="card-top-right">
+      {isOngoing && <span class="ongoing-badge"><span class="ongoing-dot"></span>ongoing</span>}
+      <span class="card-date">{project.data.date}</span>
+    </div>
+  </div>
+  {project.data.lastUpdated && (
+    <p class="card-updated">Updated {project.data.lastUpdated}</p>
+  )}
+  <h3>{project.data.title}</h3>
+  <p class="subtitle">{project.data.subtitle}</p>
+  <div class="impact-list">
+    {project.data.impact.slice(0, 2).map((item: string) => (
+      <span class="impact-item">{item}</span>
+    ))}
+  </div>
+  <div class="tag-list">
+    {project.data.stack.slice(0, 5).map((item: string) => (
+      <span class="tag">{item}</span>
+    ))}
+  </div>
+</a>

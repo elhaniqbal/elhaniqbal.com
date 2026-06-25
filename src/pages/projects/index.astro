@@ -1,0 +1,35 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+
+const projects = (await getCollection('projects'))
+  .sort((a, b) => {
+    if (a.data.featured && !b.data.featured) return -1;
+    if (!a.data.featured && b.data.featured) return 1;
+    return a.data.date < b.data.date ? 1 : -1;
+  });
+---
+<BaseLayout
+  title="Projects - Elhan Iqbal"
+  description="Engineering case studies spanning robotics, cloud infrastructure, ML privacy, and smart contracts."
+>
+  <div class="container">
+    <div class="page-intro">
+      <span class="label">Projects</span>
+      <h1>Things I've built.</h1>
+      <p>
+        Some of these I'm proud of. Some taught me a lot by not working. A few are both.
+        The early ones are messy (there's a full-stack app out there with node_modules committed
+        to git and zero tests). The later ones reflect how my thinking has changed. That arc
+        is kind of the point.
+      </p>
+    </div>
+
+    <section class="section">
+      <div class="project-grid">
+        {projects.map((project) => <ProjectCard project={project} />)}
+      </div>
+    </section>
+  </div>
+</BaseLayout>

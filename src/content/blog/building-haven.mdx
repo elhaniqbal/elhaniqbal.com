@@ -1,0 +1,48 @@
+---
+title: 'Building HAVEN: when the software finally meets the machine'
+description: 'A retrospective on building a smart tool vending system as a capstone project -- the parts that worked, the parts that did not, and what I would do differently.'
+date: '2026-05-15'
+lastUpdated: '2026-06-24'
+tags: ['Hardware', 'Embedded', 'Capstone', 'Raspberry Pi', 'State Machines']
+draft: false
+---
+
+HAVEN was my capstone project, and it was the first time I had to build something where "it compiles" genuinely did not mean anything. The system has a Raspberry Pi, a stepper motor controller, encoders, RFID readers, a kiosk touchscreen, and six rotary dispensers. It works when all of those agree about the state of the world at the same time. Getting them to agree was most of the project.
+
+## The idea
+
+University makerspaces and shops lose track of tools. A drill goes out, does not come back, nobody knows whose badge it was. HAVEN is a smart tool vending machine: RFID auth, automated dispensing, physical verification that the tool actually left and came back, and an admin interface that does not require SSH to operate.
+
+The capstone constraint is that it has to be a real, demo-able physical prototype. Not a prototype where the demo path works and everything else is duct tape (well, some of it is duct tape, but intentional duct tape).
+
+## Where it got interesting
+
+### The state machine problem
+
+Early on I tried to handle the user flow with a series of API calls and some UI state. It got messy fast. A user could tap a button before the machine finished homing. The frontend could show one thing while the hardware was doing something else. Recovery was unclear.
+
+The fix was treating everything as a named state transition: `idle -> authenticated -> homing -> rotating -> presenting -> awaiting_confirmation -> complete`. Each state has preconditions, expected outputs, and explicit recovery paths. Once that was the model, the UI became simpler because every button existed for a reason, and the backend could refuse transitions that made no physical sense.
+
+### Homing
+
+Homing sounds easy until one side of your vertical gantry moves faster than the other and the carriage comes down skewed. Getting both axes to home reliably, consistently, without jamming the mechanism, took longer than I expected. The Klipper macro system helped but has its own quirks I learned the hard way.
+
+### The encoder
+
+The slot model (which rotary position the mechanism is at) does not update until an encoder confirms the physical position. This sounds obvious in retrospect, but the temptation early on was to trust the commanded position. You cannot. Steppers skip. Encoders do not lie.
+
+### Frontend state surviving across logins
+
+I had a bug where alert state from a previous admin session would persist after a new login. The alerts were sitting in component state that did not get cleared on the auth flow. Fixed with a full state reset on authentication, but it is the kind of bug you only see if you demo the thing to a real person who actually uses it the wrong way.
+
+## What I would do differently
+
+Automated tests for the state machine earlier. I was writing integration behavior by hand against the real hardware for most of the project. The sequence diagrams I drew after the fact would have been more useful before I started implementing.
+
+Also: document the Tailscale tunnel setup somewhere that is not my memory. It works, but if someone else needed to reproduce the deployment from scratch, that would be the hard part.
+
+## What it taught me
+
+Software that touches hardware makes you precise in a way that web apps do not require. A bug that causes a retry in a web app causes a jam or a missed slot in a physical system. The cost of unclear state is higher. The feedback loop is slower and noisier. You end up writing better software because the environment does not let you be lazy about it.
+
+HAVEN is the project I am most proud of, not because it is the most technically sophisticated thing I have built, but because it is the most complete. The whole thing -- frontend, backend, hardware, deployment, admin tooling, demo reliability -- had to work together. And it did.

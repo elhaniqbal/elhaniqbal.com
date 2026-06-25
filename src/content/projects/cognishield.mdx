@@ -1,0 +1,130 @@
+---
+title: 'CogniShield — Vibe Check'
+subtitle: 'A zero-LLM cognitive-dependency scorer that classifies programmer–AI chat transcripts into six behavioral archetypes using geometric signal-space gating and calibrated confidence bounds.'
+date: '2026'
+status: 'Personal project · ongoing'
+featured: true
+impact:
+  - 'Built a complete dependency-scoring pipeline — PII redaction, six-axis signal extraction, size-adaptive gist compression, and archetype-sphere gating — without a single LLM call at inference time.'
+  - 'Adapted the midpoint-radius n-sphere formula from RAG retrieval research (US Patent 12,579,200 B1) as a selective-prediction gate: transcripts that fall clearly inside one region are auto-labeled; ambiguous cases escalate to human review.'
+  - 'Implemented a confidence-aware archetype classifier covering six behavioral patterns (Pure Vibe Coder, Real Engineer, Skill Atrophy, Oversharing, Smart Amplify, Hallucination Accepter) with a single α knob controlling risk/coverage tradeoff.'
+stack: ['Python', 'NumPy', 'scikit-learn', 'Streamlit', 'Matplotlib', 'sentence-transformers', 'Presidio', 'lmppl']
+links:
+  - label: 'GitHub'
+    href: 'https://github.com/e31iqbal'
+heroImage: '/media/projects/cognishield/cognishield-sneak-peek.png'
+videoUrl: ''
+---
+
+## The problem
+
+AI-assisted coding is getting faster. What is less clear is whether it is making programmers better or just more comfortable with not understanding their own code. There is a difference between using AI to move faster and using AI as a replacement for thinking -- and that difference is not easy to observe from the outside.
+
+The question I wanted to answer: can you automatically detect which pattern is happening, without calling an LLM to do it?
+
+## What Vibe Check does
+
+Vibe Check is a scoring tool for programmer–AI chat transcripts. You paste or load a conversation, and it extracts a set of behavioral signals without any LLM call at inference time. Those signals feed into an archetype classifier that either auto-labels the transcript or routes it to a human if the case is ambiguous.
+
+The output is a dependency score (0 to 1) and an archetype label with a confidence bound:
+
+- **Pure Vibe Coder** — copies everything, never questions, never edits structurally
+- **Real Engineer** — specific prompts, pushes back, edits code, understands what was accepted
+- **Skill Atrophy** — starts competent, progressively hands more work to the AI mid-session
+- **Oversharing** — leaks secrets, API keys, or PII into the conversation
+- **Smart Amplify** — heavy AI use but critically: adapts output, high-quality prompts, healthy pattern
+- **Hallucination Accepter** — accepts subtly wrong answers without verifying
+
+## Pipeline
+
+```
+Raw transcript
+  ↓
+[1] PII / secret pre-pass (regex + Shannon entropy)
+  ├─ redacts locally before anything leaves the machine
+  └─ generates oversharing signal
+  ↓
+[2] Six-axis signal extraction (zero LLM calls)
+  ├─ copy_rate      — verbatim vs. structural edit distance
+  ├─ pushback       — disagreement markers and re-asks
+  ├─ ppl_div        — vocabulary-density divergence (proxy for technical gap)
+  ├─ explain_gap    — cyclomatic complexity of accepted code vs. user's depth
+  ├─ oversharing    — severity-weighted PII density
+  └─ prompt_q       — intrinsic specificity × outcome feedback
+  ↓
+[3] Size-adaptive gist (semantic segmentation)
+  ├─ ≤ 30 messages: pass through
+  └─ larger: extract centroid-nearest sentences per topic segment (~60–80% token reduction)
+  ↓
+[4] Archetype-sphere gating
+  ├─ inside exactly one sphere → AUTO label + confidence
+  ├─ outside all spheres → ESCALATE (out-of-distribution)
+  └─ overlapping → ESCALATE (conflict)
+  ↓
+[5] Dependency score [0, 1]
+```
+
+## The gating idea
+
+The classifier does not use a trained model. Instead, each archetype is an anchor point in six-dimensional signal space, calibrated as the centroid of signal vectors extracted from labeled examples.
+
+Each anchor has a radius:
+
+```
+radius = α × (½ × distance to nearest neighbor archetype)
+```
+
+This is the midpoint-radius formula from [US Patent 12,579,200 B1](https://patents.google.com/patent/US12579200B1), a Samsung Research RAG system that uses n-spheres around entity embeddings for document retrieval. I repurposed the same geometry for behavioral classification: instead of retrieving documents near a query, the system asks whether a signal vector falls clearly within one archetype's region.
+
+If yes, it is auto-labeled. Confidence is `(radius - distance) / radius`. If the vector is outside all regions or sits where two overlap, it escalates. This makes the system honest about what it does not know.
+
+The α parameter is the only tuning knob. Lower α means tighter spheres, more escalations, less risk of wrong auto-labels. Higher α means more coverage, fewer escalations, more trust in the geometry.
+
+## The six signal axes
+
+**copy_rate** uses a dual-distance metric: syntactic overlap (n-gram similarity) compared to semantic similarity between the AI's code output and the user's next message. High semantic similarity with low syntactic overlap signals real structural edits, not cosmetic renames. The ratio of the two captures the difference.
+
+**pushback_rate** looks for disagreement markers and re-ask patterns: phrases like "that won't work", "are you sure", or the same question reframed after a failed answer.
+
+**ppl_div** measures vocabulary-density divergence between user messages and assistant responses. A large gap suggests the user is accepting explanations significantly above their demonstrated technical level without questioning them.
+
+**explain_gap** is the heaviest-weighted axis. It computes cyclomatic complexity of code blocks the user accepts, then compares against a proxy for the user's technical depth derived from their own vocabulary. Accepting code significantly more complex than what you demonstrate you understand is the primary dependency signal.
+
+**oversharing** uses severity-weighted PII density. An email in the transcript is severity 2; a credit card number is severity 3; a raw private key or API key is highest severity. The mapping is `1 - exp(-density)` to stay in [0, 1] while preserving signal at low densities.
+
+**prompt_q** scores each prompt on intrinsic quality (specificity, structure, constraints, target output format) multiplied by an outcome signal: whether the next user message looks like a re-ask or acceptance.
+
+## PII handling
+
+All transcript text is scanned locally before any processing. The regex pre-pass covers emails, SSNs, credit cards, API keys (AWS access key format, Bearer tokens), JWTs, private keys, and connection strings. Shannon entropy flagging catches high-entropy token strings that bypass pattern matching. When `presidio-analyzer` is available it adds NER-based detection for names and locations. Redaction happens in-memory: nothing leaves the machine unredacted.
+
+## Stack
+
+The core pipeline requires only NumPy and scikit-learn. Streamlit provides the web UI; Matplotlib handles the 2D PCA projections of signal space. Optional heavier dependencies (sentence-transformers for real embeddings, lmppl + PyTorch for real perplexity divergence, Presidio for NER-based PII detection) are detected at runtime with graceful fallback to lexical proxies.
+
+```
+numpy + scikit-learn      → required (signal extraction, gating geometry)
+streamlit                 → UI (no backend server)
+sentence-transformers     → optional (real MiniLM-L6-v2 embeddings vs. TF-IDF)
+lmppl + torch             → optional (real GPT-2 perplexity vs. vocab-density proxy)
+presidio-analyzer + spacy → optional (NER-based PII vs. regex-only)
+```
+
+## Calibration
+
+First run synthesizes labeled examples for all six archetypes, extracts signal vectors, and computes centroids that become the anchor points. These cache to `anchors.json` and reload without re-synthesis. The geometry is not hand-tuned: the anchor positions come from the same signal extractor that runs at inference time, so they live in the same space.
+
+Leave-one-out evaluation on the bundled synthetic data runs at high accuracy. Real-world transcripts will escalate more frequently, which is the correct behavior: the system is supposed to route ambiguous cases out rather than guess.
+
+## UI
+
+The Streamlit interface has four tabs:
+
+- **Score a transcript** — paste text or load one of the bundled archetype samples; see the gate decision, dependency score, signal bar chart, and per-archetype distance table
+- **Signal space** — 2D PCA projection of archetype anchors with sphere boundaries drawn at current α; upload a transcript to see where it lands relative to the regions
+- **Batch & scale** — leave-one-out evaluation sweep across all bundled samples; gist compression test on a synthetic 800-turn transcript
+- **About** — documentation, honesty notes about synthetic data separability, signal proxy limitations
+
+## What is next
+
+Extending the signal extraction to handle longer multi-session transcripts from LMSYS/ShareGPT. Adding a validated ground-truth dataset with real labeled examples from consenting participants. Publishing the anchor calibration methodology so others can use it with their own labeled data. The n-sphere gating geometry is general enough to handle more than six archetypes with minimal changes.

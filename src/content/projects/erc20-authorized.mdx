@@ -1,0 +1,50 @@
+---
+title: 'ERC20Authorized: Delegated Token Authorization Layer'
+subtitle: 'A Solidity smart-contract system for capability-style ERC-20 authorization, registration fees, and delegated approval flows.'
+date: '2025'
+status: 'Blockchain · security-oriented prototype'
+featured: true
+impact:
+  - 'Designed server/client smart-contract architecture where ERC-20 clients register with a central authorization server.'
+  - 'Implemented authorization caps, delegated approveFor flows, revocation, treasury withdrawal, and registration fee dynamics.'
+  - 'Wrote Foundry tests covering edge cases around revocation, re-registration, invalid addresses, underflow/overflow, and fee behavior.'
+stack: ['Solidity', 'Foundry', 'ERC-20', 'OpenZeppelin', 'TypeScript', 'React', 'Security', 'Sepolia']
+links:
+  - label: 'GitHub'
+    href: 'https://github.com/e31iqbal'
+heroImage: '/media/erc20-placeholder.svg'
+videoUrl: ''
+recruiterSignal: 'This project shows security-oriented systems thinking: protocol design, edge-case testing, economic constraints, contract composability, and frontend integration.'
+---
+
+## Problem
+
+ERC-20 approvals are powerful but blunt. Users often approve a spender directly, and that spender can use the allowance according to the token contract's rules. I explored a more explicit authorization layer where an owner can grant an authorized account a capped ability to trigger approvals through a registered client token.
+
+## What I built
+
+ERC20Authorized uses a server/client pattern. A central authorization server tracks caps, authorizers, authorized accounts, registered clients, registration fees, and treasury state. ERC-20 client contracts compose with the server and forward authorization-related calls.
+
+## Key features
+
+- `authorize(owner, authorized, cap)` for capped delegated authority;
+- `approveFor(owner, authorized, spender, amount)` for controlled delegated approval;
+- `revokeAuthorization` to clear authorization state;
+- client registration and revocation;
+- dynamic fee logic for client registration;
+- treasury withdrawal for collected ETH;
+- Foundry tests for authorization, revocation, fee behavior, and edge cases.
+
+## Engineering tradeoffs
+
+The core tradeoff was designing an abstraction that is easy to explain without hiding important trust boundaries. A contract that grants delegated approval needs careful state clearing, array pruning, cap accounting, and explicit failure behavior.
+
+The project forced me to think about API ergonomics, adversarial edge cases, and the difference between a demo that works once and a protocol design that fails safely.
+
+## Why it matters
+
+Recruiters should read this as proof that I can reason about systems where correctness matters. Smart contracts are unforgiving: unclear ownership, stale state, missing validation, and weak tests can become real vulnerabilities.
+
+## What I would improve next
+
+I would write a stronger threat model, add formal invariants, polish the frontend demo, and document exactly when this pattern is safer or worse than existing approval patterns.

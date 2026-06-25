@@ -1,16 +1,6 @@
+# Elhan Portfolio Site
 
-# Portfolio Site (Vite + React)
-
-This repo is set up to be **dead simple to customize** and deploy to **GitHub Pages**.
-
-## Customize
-
-1) Update text/links in:
-- `src/content.ts`
-
-2) Add your CV PDF:
-- put your file at: `public/assets/cv.pdf`
-- the "Download CV" button uses `siteContent.cvUrl` (default: `./assets/cv.pdf`)
+A fast Astro portfolio + engineering blog designed for recruiter-friendly project storytelling.
 
 ## Run locally
 
@@ -19,18 +9,16 @@ npm install
 npm run dev
 ```
 
-Open: `http://localhost:5173`
+Then open the local URL Astro prints, usually `http://localhost:4321`.
 
-## Deploy to GitHub Pages
+## Edit content
 
-This repo includes a GitHub Actions workflow:
-- `.github/workflows/deploy.yml`
+- Project case studies live in `src/content/projects/*.mdx`
+- Blog posts live in `src/content/blog/*.mdx`
+- Site-wide copy/config lives in `src/site.config.ts`
+- Styling lives in `src/styles/global.css`
+- Drop real images/videos into `public/media/` and update the `heroImage`, `gallery`, and `videoUrl` fields in each MDX file.
 
-Steps:
-1) Push this repo to GitHub
-2) In your GitHub repo: **Settings → Pages**
-3) Under **Build and deployment**, select **GitHub Actions**
-4) Push to the `main` branch → it builds and deploys automatically
+## Deploy
 
-If you use a custom domain, you can add it in GitHub Pages settings.
-  
+Cloudflare Pages, Netlify, or Vercel all work. Build command: `npm run build`. Output directory: `dist`.
