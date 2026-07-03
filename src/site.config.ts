@@ -6,7 +6,7 @@ export const site = {
     'I build production-minded systems that connect cloud infrastructure, embedded hardware, robotics, security, and applied ML.',
   pitch:
     'Engineering portfolio focused on high-signal project case studies: Raspberry Pi + Klipper robotics, cloud DevOps, membership inference research, and smart-contract authorization systems.',
-  email: 'e31iqbal@gmail.com',
+  email: 'contact@elhaniqbal.com',
   github: 'https://github.com/e31iqbal',
   linkedin: 'https://www.linkedin.com/in/elhan-iqbal/',
   resume: '/resume.pdf',

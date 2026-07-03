@@ -7,7 +7,7 @@ const isOngoing = project.data.status.toLowerCase().includes('ongoing');
   <div class="card-top">
     <span class="card-status">{project.data.status}</span>
     <div class="card-top-right">
-      {isOngoing && <span class="ongoing-badge"><span class="ongoing-dot"></span>ongoing</span>}
+      {isOngoing && <span class="ongoing-badge">ongoing</span>}
       <span class="card-date">{project.data.date}</span>
     </div>
   </div>

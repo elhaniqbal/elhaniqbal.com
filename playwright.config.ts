@@ -14,6 +14,11 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:4321',
     trace: 'on-first-retry',
+    // Signals prefers-reduced-motion: reduce to every page. The terminal widget
+    // on the homepage respects this and skips its setTimeout animation loop,
+    // keeping the JS event loop free during tests and preventing race conditions
+    // between the animation and click-event handlers in parallel test runs.
+    reducedMotion: 'reduce',
   },
   expect: {
     toHaveScreenshot: {

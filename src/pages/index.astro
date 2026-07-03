@@ -388,7 +388,7 @@ const recentPosts = (await getCollection('blog'))
   }
 
   const termEl = document.getElementById('term-body');
-  if (termEl) runTerminal(termEl);
+  if (termEl && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) runTerminal(termEl);
 </script>
 
 </BaseLayout>

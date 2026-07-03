@@ -261,6 +261,10 @@ main {
   border-color: var(--border-2);
 }
 
+.theme-btn svg {
+  pointer-events: none;
+}
+
 /* ─── Footer ─────────────────────────────── */
 
 .site-footer {
@@ -860,33 +864,18 @@ main {
 .ongoing-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--t-green);
+  padding: 0.2rem 0.65rem;
+  border-radius: 100px;
   background: rgba(40, 200, 64, 0.08);
+  color: var(--t-green);
   border: 1px solid rgba(40, 200, 64, 0.22);
-  padding: 0.175rem 0.5rem 0.175rem 0.4rem;
-  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  letter-spacing: 0.01em;
   white-space: nowrap;
   flex-shrink: 0;
   align-self: flex-start;
-}
-
-.ongoing-dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--t-green);
-  flex-shrink: 0;
-  animation: live-pulse 2.4s ease-in-out infinite;
-}
-
-@keyframes live-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
 }
 
 .card-top-right {
@@ -1324,6 +1313,12 @@ main {
 
   .hero-grid {
     grid-template-columns: 1fr;
+  }
+
+  /* Fixed height prevents JS-driven terminal animation from changing page height
+     between screenshot attempts, which breaks visual regression tests. */
+  .terminal {
+    height: 320px;
   }
 
   /* Timeline collapses to single column */

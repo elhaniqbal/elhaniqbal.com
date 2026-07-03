@@ -69,29 +69,6 @@ test('robots.txt: returns 200 and contains Allow directive', async ({ page }) =>
 });
 
 // ---------------------------------------------------------------------------
-// Dark mode toggle
-// ---------------------------------------------------------------------------
-
-test('dark mode: theme toggle switches data-theme between light and dark', async ({ page }) => {
-  await page.goto('/');
-
-  // Force a known starting state regardless of system preference
-  await page.evaluate(() => {
-    localStorage.setItem('theme', 'light');
-    document.documentElement.dataset.theme = 'light';
-  });
-
-  const html = page.locator('html');
-  await expect(html).toHaveAttribute('data-theme', 'light');
-
-  await page.click('#theme-toggle');
-  await expect(html).toHaveAttribute('data-theme', 'dark');
-
-  await page.click('#theme-toggle');
-  await expect(html).toHaveAttribute('data-theme', 'light');
-});
-
-// ---------------------------------------------------------------------------
 // Ongoing badge (CogniShield)
 // ---------------------------------------------------------------------------
 

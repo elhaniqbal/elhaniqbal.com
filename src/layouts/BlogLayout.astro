@@ -3,7 +3,7 @@ import BaseLayout from './BaseLayout.astro';
 import { formatDate } from '../utils/date';
 const { frontmatter } = Astro.props;
 ---
-<BaseLayout title={`${frontmatter.title} - Blog`} description={frontmatter.description}>
+<BaseLayout title={`${frontmatter.title} — Elhan Iqbal`} description={frontmatter.description}>
   <article class="blog-post container">
     <a class="back-link" href="/blog">← All posts</a>
     <header class="post-header">

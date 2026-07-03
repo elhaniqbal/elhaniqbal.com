@@ -9,7 +9,7 @@ const isOngoing = frontmatter.status.toLowerCase().includes('ongoing');
 
     <header class="case-header">
       <div class="case-meta">
-        {isOngoing && <span class="ongoing-badge"><span class="ongoing-dot"></span>ongoing</span>}
+        {isOngoing && <span class="ongoing-badge">ongoing</span>}
         <span>{frontmatter.status} · {frontmatter.date}</span>
         {frontmatter.lastUpdated && <span>Updated {frontmatter.lastUpdated}</span>}
       </div>
