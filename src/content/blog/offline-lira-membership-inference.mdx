@@ -1,0 +1,123 @@
+---
+title: 'Offline LiRA, 256 shadow models, and the blurry definition of "membership"'
+description: 'Notes from undergrad ML privacy research with Dr. Simon Oya: building an offline LiRA membership inference pipeline, turning paper math into NumPy, and why the member/non-member boundary is shakier than the benchmarks admit.'
+date: '2026-07-09'
+tags: ['ML Privacy', 'Security', 'Research', 'LiRA', 'NumPy']
+draft: false
+---
+
+import YouTube from '../../components/YouTube.astro';
+
+Modern machine learning systems can leak information about their training data. Membership inference asks whether an attacker can determine if a specific example was included in a model's training set. This matters for privacy, data governance, LLM safety, and responsible AI deployment — if your medical record, your photo, or your writing was used to train a model, membership inference is one of the few tools that can even attempt to detect it.
+
+This post is a writeup of undergraduate research I worked on with [Dr. Simon Oya](https://simonoya.com/) at UBC alongside a good friend of mine, plus a question the work left me with that I don't think the field has fully answered: what does "member" even mean?
+
+## The setup
+
+We built an offline LiRA-style research sandbox for evaluating membership inference attacks, based on the "Membership Inference Attacks From First Principles" line of work (Carlini et al.).
+
+The setup: one target model and **256 shadow models**, all ResNet-18s trained on CIFAR-10 subsets. For each query example, we extract per-example features from the shadow models that did *not* train on it, fit OUT-only reference distributions, and score target examples as likely members or non-members based on how statistically unusual they look under those references.
+
+Training 256 shadow models is where "offline" LiRA earns its name — all the expensive work happens once, up front, and afterwards any example can be scored without training anything new. It also forced me to take checkpoint management, deterministic splits, and target-vs-shadow data separation seriously, because a single leaked example between target training data and shadow OUT data quietly corrupts the whole evaluation.
+
+## From scalar scores to multivariate likelihoods
+
+The core scoring idea is to model how a non-member example *should* behave under shadow models, then flag target examples that look statistically unusual. Classic offline LiRA does this with a single scalar (usually a logit-scaled confidence). We extended the sandbox to multivariate scoring, where each query example gets a feature vector and a likelihood under an estimated multivariate Gaussian OUT distribution.
+
+Representative feature vectors included:
+
+```txt
+[cross_entropy_loss,
+ correctness,
+ true_label_confidence,
+ entropy,
+ modified_entropy,
+ margin,
+ top1_probability,
+ top2_probability]
+```
+
+<figure>
+  <YouTube
+    id="r_7MvEwtmeI"
+    title="Multivariate LiRA experiments walkthrough"
+  />
+  <figcaption>
+    Multivariate LiRA experiments: combining loss, margin, and entropy features into joint Gaussian likelihoods.
+  </figcaption>
+</figure>
+
+## Results
+
+Attack performance is reported the way the LiRA paper argues it should be: log-log ROC curves and true-positive rates at very low false-positive rates (1e-4, 1e-3, 1e-2), not just average-case AUC. An attack that confidently identifies 1% of members with essentially zero false positives is a real privacy violation even if its AUC looks unremarkable.
+
+<figure>
+  <img
+    src="/media/blog/lira-ml-privacy-research/offline_lira_mv_cdf_loglog.png"
+    alt="Log-log ROC curves comparing scalar CDF and multivariate CDF offline LiRA variants over loss, margin, and entropy feature combinations"
+  />
+  <figcaption>
+    Scalar vs. multivariate offline LiRA. Scalar loss scoring lands around AUC 0.678; the best multivariate combos (margin + entropy, and margin + entropy + augmentation-averaged loss) reach ~0.746, with TPR around 1–2% at FPR = 1e-4.
+  </figcaption>
+</figure>
+
+We also ran an augmentation experiment: instead of querying the model once per example, query it on several augmented views (shifts, noise) and derive features from the distribution of losses across views — average loss, loss standard deviation, mean prediction entropy. Members tend to be robust to augmentations of themselves in ways non-members are not, so these features carry real signal.
+
+<figure>
+  <img
+    src="/media/blog/lira-ml-privacy-research/aug_experiment_loglog.png"
+    alt="Log-log ROC curves for the augmentation experiment, sweeping avg_loss, std_loss, and entropy_mean_pred features over base, shift, noise, and combined augmentations"
+  />
+  <figcaption>
+    Augmentation feature sweep: {'{'}avg_loss | std_loss | entropy_mean_pred{'}'} × {'{'}base | shift | noise | all{'}'}. Featurewise combinations of augmentation statistics with margin and entropy consistently beat the scalar baselines.
+  </figcaption>
+</figure>
+
+Beyond the plots, most of the actual work was experiment hygiene: deterministic data splits, strict target-vs-shadow separation, checkpoint management across 256+ training runs, best-epoch vs. last-epoch tradeoffs, flip detection when scores have the wrong orientation, and shape-safe analysis code.
+
+## Turning math into code into results
+
+The skill I most wanted to build with this project was a mental muscle: read a research paper, stare at notation that initially looks intimidating, and realize it decomposes into operations I already know how to write.
+
+The multivariate Gaussian likelihood in the LiRA extension is a good example. On paper it's a covariance matrix, a Mahalanobis distance, and a log-determinant. In code it's a handful of NumPy and SciPy lines — `np.cov`, `scipy.stats.multivariate_normal.logpdf`, some careful broadcasting. Once I stopped treating equations as sacred objects and started treating them as compressed pseudocode, the papers got dramatically easier to implement.
+
+NumPy specifically forced discipline I didn't have before. Almost every subtle bug in this project was a shape bug: a feature matrix silently broadcasting against the wrong axis, a covariance estimated over examples instead of features, scores that were valid numbers but oriented the wrong way. I ended up writing shape-safe analysis code with explicit assertions on array dimensions, and building the habit of sanity-checking every statistical quantity against a hand-computed small case before trusting a plot. The loop I internalized — math on paper, vectorized code, ROC curve, back to the math when the curve looks wrong — is the core loop of empirical ML research, and getting reps on it was the real output of this project.
+
+## A note on vibe coding
+
+Parts of the initial research experiment and also the video script was vibe coded. Research code turned out to be the perfect stress test for it, because it's exactly the setting where AI-generated code is a double-edged sword.
+
+The upside was real though, experiment scaffolding, plotting code, and pipeline glue came together much faster than I could have written them by hand, which meant more experiments per week. But the cost showed up somewhere sneakier than compile errors. When results *didn't* match a hypothesis, I could no longer assume the hypothesis was wrong - I first had to rule out that the code was. That meant more time code reviewing, revisiting concepts I thought I'd already understood, and untangling plausible-looking AI slop: code that runs, produces reasonable-shaped numbers, and is quietly computing the wrong thing. In an ordinary app a bug throws an exception; in research code a bug produces a publishable-looking ROC curve.
+
+The net effect was faster results, paid for with slower trust. For research specifically, I now treat generated code the way I treat the math: nothing gets believed until I've checked it against a hand-computed small case.
+
+## What even counts as a "member"?
+
+Working on this surfaced a thought of my own that I couldn't shake: the entire evaluation rests on a binary label — member or non-member — and that binary is much blurrier than the benchmarks suggest.
+
+Formally, a "member" is an exact example in the training set. But what about an augmented view of a member? Staring at our augmentation experiments is what triggered the question for me: a shifted or noised copy of a training image is *technically* a non-member — it was never in the training set byte-for-byte — yet the model treats it almost like a member, and it carries nearly the same information. What is a non-member that's statistically similar to a member, really? The same problem shows up at scale with near-duplicates: web-scraped training sets contain so many duplicate and semantically similar samples that [the member/non-member boundary stops being well-defined](https://www.emergentmind.com/topics/membership-inference-attack), and MIAs are known to flag statistically similar non-members as members at high rates.
+
+I arrived at this on my own, and when I later went looking, I found the field is actively wrestling with the same thing — which was both validating and a little deflating. A recent position paper by Zhang, Das, Kamath, and Tramèr argues that [membership inference attacks cannot prove a model was trained on your data](https://arxiv.org/abs/2409.19798), because a convincing proof requires a low false-positive rate under the null hypothesis "the model never saw this data" — and you can't sample from that null when the training set is unknown and statistically similar non-members exist everywhere. Exact-record membership is the wrong unit of analysis; the leakage that matters lives at the level of distributions, not individual byte strings.
+
+## The LLM version of this problem
+
+The blurriness gets dramatically worse in the LLM space, and it cuts in the provider's favor. Duan et al. ran a large-scale evaluation and found that [membership inference attacks barely outperform random guessing on LLMs](https://arxiv.org/abs/2402.07841), and attribute it to exactly this: massive datasets, few training epochs, and an *inherently fuzzy boundary* between members and non-members — huge n-gram overlap means "non-member" text is often substantially contained in member text anyway.
+
+So can a company like OpenAI "technically steal" your data because of the blurry definition? Here's my honest read: the blurriness doesn't make taking your data legal — but it makes it close to *unprovable*. If MIAs are near-random on LLMs, and no attack can establish a sound false-positive rate against the unknown training distribution, then a provider who trained on your text — or on a paraphrase of it — faces essentially no risk that a statistical audit will ever demonstrate it. The definitional blur doesn't create a right to the data; it destroys the evidence. That asymmetry, more than any single training decision, is what feels broken to me.
+
+The gap also led me to a thought experiment. If an augmentation of a member is formally a non-member, could a company paraphrase your text — preserving its meaning but changing its surface form — and train on the paraphrase, claiming it never trained on *your* data? Technically, under the exact-match definition, the claim would even be true, and a membership inference audit against your original text might fail.
+
+Having looked into it, the legal reality is messier than the technical loophole suggests, in both directions:
+
+- **The loophole is less necessary than I assumed.** In 2025, US district courts in the Anthropic and Meta cases held that [training LLMs on copyrighted works is transformative fair use](https://www.finnegan.com/en/insights/ip-updates/district-court-finds-that-using-copyrighted-works-to-train-large-language-models-is-fair-use.html) in the first place — so companies haven't needed a paraphrasing trick, though [how the works were acquired and market-dilution effects still matter](https://www.reedsmith.com/en/perspectives/2025/07/a-new-look-fair-use-anthropic-meta-copyright-ai-training).
+- **The loophole is also less airtight than it sounds.** Copyright doesn't use an exact-match definition; a paraphrase that "captures significant meaning" is exactly what derivative-works and substantial-similarity doctrine exist to catch, and creating the paraphrase already requires copying the original. Privacy law is similar: GDPR turns on whether a person is *identifiable*, not whether the bytes match. Researchers have flagged that [paraphrasing techniques can be misused to obfuscate provenance](https://arxiv.org/html/2311.08374v2), but obfuscating provenance is not the same as erasing the legal interest.
+
+What I take away is that the technical and legal definitions fail in *opposite* ways. The MIA research definition is too narrow — it treats a trivially augmented copy as a different datapoint, so audits can be dodged by anyone controlling the pipeline. The legal definitions are broader but unenforceable without exactly the kind of statistical evidence the position paper shows MIAs can't provide. The interesting open problem is in the middle: leakage and membership definitions that operate on distributions and semantic neighborhoods rather than exact records.
+
+## Where I want to take this next
+
+The direction I keep coming back to — one that came out of a discussion with Dr. Oya — is **LiRA in a federated setting**. Federated learning changes almost every assumption the offline attack rests on: the training data is sharded across clients, the "training set" is no longer one well-defined bag of examples, and the attacker might be a curious server watching model updates or a participant observing the global model across rounds. Does the shadow-model recipe still work when membership is per-client rather than per-example? Does secure aggregation actually blunt the low-FPR regime, or just the average case? I don't know yet — that's a future blog post.
+
+I'd also like to extend the sandbox to LLM-style black-box outputs, where the attacker sees only limited probability or token information — which is exactly the regime where the member/non-member boundary is blurriest.
+
+If you work on membership inference, or you think my augmentation-loophole reasoning is wrong (I'd genuinely like to hear why), reach out — this is the kind of topic where I'd rather be corrected than comfortable.

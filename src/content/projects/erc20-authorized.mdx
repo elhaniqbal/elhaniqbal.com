@@ -1,50 +1,53 @@
 ---
 title: 'ERC20Authorized: Delegated Token Authorization Layer'
-subtitle: 'A Solidity smart-contract system for capability-style ERC-20 authorization, registration fees, and delegated approval flows.'
-date: '2025'
-status: 'Blockchain · security-oriented prototype'
-featured: true
+subtitle: 'A two-person Solidity project building a capability-style authorization layer for ERC-20 tokens — contracts, tests, deploy scripts, and a React frontend.'
+date: '2026'
+status: 'Blockchain · course project'
+featured: false
 impact:
-  - 'Designed server/client smart-contract architecture where ERC-20 clients register with a central authorization server.'
-  - 'Implemented authorization caps, delegated approveFor flows, revocation, treasury withdrawal, and registration fee dynamics.'
-  - 'Wrote Foundry tests covering edge cases around revocation, re-registration, invalid addresses, underflow/overflow, and fee behavior.'
-stack: ['Solidity', 'Foundry', 'ERC-20', 'OpenZeppelin', 'TypeScript', 'React', 'Security', 'Sepolia']
+  - 'Built the client registration system with a dynamic, daily-cached fee model, plus the Sepolia deploy scripts and Hardhat config.'
+  - 'Expanded the Solidity test suite to cover registration, revocation, and fee edge cases across several patch rounds.'
+stack: ['Solidity', 'Hardhat', 'ERC-20', 'TypeScript', 'React', 'wagmi', 'Vite', 'Sepolia']
 links:
   - label: 'GitHub'
-    href: 'https://github.com/e31iqbal'
-heroImage: '/media/erc20-placeholder.svg'
-videoUrl: ''
-recruiterSignal: 'This project shows security-oriented systems thinking: protocol design, edge-case testing, economic constraints, contract composability, and frontend integration.'
+    href: 'https://github.com/orSolocate/Authorization-AUTHD'
 ---
 
-## Problem
+## How I got here
 
-ERC-20 approvals are powerful but blunt. Users often approve a spender directly, and that spender can use the allowance according to the token contract's rules. I explored a more explicit authorization layer where an owner can grant an authorized account a capped ability to trigger approvals through a registered client token.
+My path into this project was gradual. A cybersecurity course first taught me the core of how blockchains actually work — hashing, consensus, and why Bitcoin is designed the way it is. Additionally during a co-op term I briefly worked around Samsung's Knox Matrix, which showed me blockchain concepts applied to something other than currency. By the time I took a dedicated blockchain course, I wanted to build a real token project end to end, not just read about one.
 
-## What I built
+## What it is
 
-ERC20Authorized uses a server/client pattern. A central authorization server tracks caps, authorizers, authorized accounts, registered clients, registration fees, and treasury state. ERC-20 client contracts compose with the server and forward authorization-related calls.
+ERC20Authorized is an authorization layer on top of ERC-20. Instead of owners approving spenders directly, a central authorization server tracks capped delegated authority: an owner can `authorize` an account up to a cap, that account can trigger `approveFor` on registered client tokens, and everything can be revoked. Client tokens register with the server and pay a registration fee that flows to a treasury.
 
-## Key features
+## What I actually did
 
-- `authorize(owner, authorized, cap)` for capped delegated authority;
-- `approveFor(owner, authorized, spender, amount)` for controlled delegated approval;
-- `revokeAuthorization` to clear authorization state;
-- client registration and revocation;
-- dynamic fee logic for client registration;
-- treasury withdrawal for collected ETH;
-- Foundry tests for authorization, revocation, fee behavior, and edge cases.
+This was a two-person project, and my goal was to touch every layer of it:
 
-## Engineering tradeoffs
+- **Contracts** — I built the client registration logic, including a dynamic registration fee with daily cached updates, and later refactored the linear rate math into its own library.
+- **Tests** — I expanded the Solidity test suite across multiple patch rounds, covering registration, revocation, and fee behavior, including closing out issues we filed against our own contract.
+- **Deployment** — I wrote the Sepolia deploy scripts and Hardhat configuration, so the system actually lived on a testnet rather than only in a local sandbox.
+- **Frontend** — I built the entire sample React + TypeScript frontend with wagmi and Vite: wallet connection, an authorization table reading contract events, and modals for authorize/approve/revoke flows against the deployed contracts.
+- **Docs** — I wireframed the frontend and rewrote the README so someone could understand and run the whole system.
 
-The core tradeoff was designing an abstraction that is easy to explain without hiding important trust boundaries. A contract that grants delegated approval needs careful state clearing, array pruning, cap accounting, and explicit failure behavior.
+## Demo
 
-The project forced me to think about API ergonomics, adversarial edge cases, and the difference between a demo that works once and a protocol design that fails safely.
+<figure>
+  <img
+    src="/media/projects/erc20-authorized/AUTHD-DEMO.png"
+    alt="The ERC20Authorized frontend: wallet connection, authorization table, and authorize/approve/revoke flows against the deployed Sepolia contracts"
+  />
+  <figcaption>
+    The React frontend running against the contracts deployed on Sepolia.
+  </figcaption>
+</figure>
 
-## Why it matters
+## What was actually hard
 
-Recruiters should read this as proof that I can reason about systems where correctness matters. Smart contracts are unforgiving: unclear ownership, stale state, missing validation, and weak tests can become real vulnerabilities.
+Honestly, the Solidity itself wasn't the hard part. Writing the contracts was mostly learning a library and its conventions — OpenZeppelin patterns, test idioms, deploy tooling. Any decent engineer can pick that up in a few weeks.
 
-## What I would improve next
+The genuinely hard parts were the things no library solves for you:
 
-I would write a stronger threat model, add formal invariants, polish the frontend demo, and document exactly when this pattern is safer or worse than existing approval patterns.
+- **Tokenomics.** Coming up with a fee model that makes sense — why should registration cost anything, what should the rate curve look like, where does the money go — took far more back-and-forth than any function we wrote.
+- **Lifecycle.** Understanding how a blockchain project actually moves from idea to design to testnet to something a user can touch and then later be updated and maintained.

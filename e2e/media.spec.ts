@@ -15,7 +15,7 @@ const ALL_PAGES = [
   '/',
   '/blog',
   '/projects',
-  '/about',
+  '/contact',
   ...blogSlugs.map((s) => `/blog/${s}`),
   ...projectSlugs.map((s) => `/projects/${s}`),
 ];
@@ -46,7 +46,10 @@ test('all public/media files are referenced by at least one page', async ({ page
   const checkAttrs = ['src', 'href', 'poster', 'data-src'];
 
   for (const pagePath of ALL_PAGES) {
-    await page.goto(pagePath);
+    // domcontentloaded: this test only reads attributes from the DOM, so
+    // there's no need to wait for images/fonts/embeds on all ~11 pages —
+    // with the default 'load' the crawl exceeds the 30s test timeout.
+    await page.goto(pagePath, { waitUntil: 'domcontentloaded' });
 
     const refs: string[] = await page.evaluate((attrs: string[]) => {
       return attrs.flatMap((attr) =>

@@ -12,13 +12,16 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:4321',
+    // Port 4322, not 4321: the dev server defaults to 4321, and with
+    // reuseExistingServer Playwright would silently test against `astro dev`
+    // (dev toolbar, unoptimized output) instead of the production build.
+    baseURL: 'http://localhost:4322',
     trace: 'on-first-retry',
     // Signals prefers-reduced-motion: reduce to every page. The terminal widget
     // on the homepage respects this and skips its setTimeout animation loop,
     // keeping the JS event loop free during tests and preventing race conditions
     // between the animation and click-event handlers in parallel test runs.
-    reducedMotion: 'reduce',
+    contextOptions: { reducedMotion: 'reduce' },
   },
   expect: {
     toHaveScreenshot: {
@@ -31,8 +34,8 @@ export default defineConfig({
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
   ],
   webServer: {
-    command: 'npm run build && npm run preview -- --port 4321',
-    url: 'http://localhost:4321',
+    command: 'npm run build && npm run preview -- --port 4322',
+    url: 'http://localhost:4322',
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
   },

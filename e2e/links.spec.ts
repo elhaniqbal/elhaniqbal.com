@@ -6,7 +6,7 @@
  */
 import { test, expect } from '@playwright/test';
 
-const PAGES = ['/', '/blog', '/projects', '/about'] as const;
+const PAGES = ['/', '/blog', '/projects', '/contact'] as const;
 
 // ---------------------------------------------------------------------------
 // Internal links: no broken hrefs on main pages
@@ -62,13 +62,33 @@ test('header nav links all resolve without 404', async ({ page }) => {
 });
 
 // ---------------------------------------------------------------------------
-// About page
+// Contact page
 // ---------------------------------------------------------------------------
 
-test('about page: loads and contains contact info', async ({ page }) => {
-  await page.goto('/about');
+test('contact page: loads with form and contact links', async ({ page }) => {
+  await page.goto('/contact');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
-  // Contact section should have some link (email or LinkedIn or GitHub)
-  const links = page.locator('.contact-list a');
-  await expect(links.first()).toBeVisible();
+
+  // The Web3Forms contact form is present with its required fields
+  const form = page.locator('form.contact-form');
+  await expect(form).toBeVisible();
+  await expect(form).toHaveAttribute('action', 'https://api.web3forms.com/submit');
+  await expect(form.locator('input[name="access_key"]')).toHaveCount(1);
+  await expect(form.locator('input[name="name"]')).toBeVisible();
+  await expect(form.locator('input[name="email"]')).toBeVisible();
+  await expect(form.locator('textarea[name="message"]')).toBeVisible();
+  await expect(form.getByRole('button', { name: /send/i })).toBeVisible();
+});
+
+test('contact form renders the hCaptcha widget', async ({ page }) => {
+  await page.goto('/contact');
+  // The Web3Forms loader injects an hCaptcha iframe into the .h-captcha div.
+  // If this fails, check the loader script tag in contact.astro and the
+  // script-src/frame-src allowances in public/_headers.
+  await expect(page.locator('.h-captcha iframe')).toBeVisible({ timeout: 15_000 });
+});
+
+test('thanks page: loads after form redirect target', async ({ page }) => {
+  await page.goto('/thanks');
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });

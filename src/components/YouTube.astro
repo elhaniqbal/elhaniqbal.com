@@ -1,0 +1,18 @@
+---
+// Privacy-enhanced YouTube embed. Uses youtube-nocookie.com, which is the
+// only frame origin allowed by the CSP frame-src directive in astro.config.mjs.
+interface Props {
+  id: string;
+  title: string;
+}
+const { id, title } = Astro.props;
+---
+<div class="video-embed">
+  <iframe
+    src={`https://www.youtube-nocookie.com/embed/${id}`}
+    title={title}
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+    allowfullscreen
+    loading="lazy"
+  />
+</div>

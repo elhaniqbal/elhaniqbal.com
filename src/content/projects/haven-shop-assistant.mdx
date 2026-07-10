@@ -2,7 +2,7 @@
 title: 'HAVEN / IGEN Shop Assistant'
 subtitle: 'A smart tool vending system combining Raspberry Pi orchestration, Klipper motion control, FastAPI, React, MQTT, and RFID into a working physical prototype.'
 date: '2026'
-status: 'Capstone · physical prototype'
+status: 'IGEN 430 Capstone Project'
 featured: true
 impact:
   - 'Full-stack electromechanical system from concept to demo: frontend, backend, machine orchestration, motion macros, RFID auth flows, and admin tooling.'
@@ -11,23 +11,23 @@ impact:
 stack: ['Raspberry Pi', 'FastAPI', 'React', 'TypeScript', 'Docker', 'MQTT', 'Klipper', 'Moonraker', 'Crowsnest', 'RFID', 'Tailscale', 'KiCad']
 links:
   - label: 'GitHub'
-    href: 'https://github.com/e31iqbal'
+    href: 'https://github.com/elhaniqbal/igen-shop-assistant'
 heroImage: '/media/projects/haven-shop-assistant/demo_admin_ui_manual_control.png'
-videoUrl: ''
-recruiterSignal: 'Proves I can integrate software with hardware under real constraints: state machines, motion control, user flows, recovery modes, admin tooling, deployment, and demo reliability.'
 ---
+
+import YouTube from '../../components/YouTube.astro';
 
 ## The problem
 
-University shops and makerspaces need a way to control access to shared tools without turning every checkout into manual staff overhead. A display and some buttons are not enough: the system has to know who is authenticated, which slot is occupied, where the mechanism physically is, whether the machine is homed, whether a tool was actually returned, and whether hardware state agrees with software state at every step.
+The IGEN Shop at UBC is a student-run makerspace supporting over 250 users and 30+ capstone projects every year - an environment where tools are frequently misused, misplaced, or stolen. Over the past few years the shop has accumulated over $3,000 in tool losses, and the existing industry solutions are either prohibitively expensive ($95,000+), lack the security features a shared student shop actually needs, or fail to integrate into a makerspace environment. That gap — small shops needing effective, affordable tool tracking and loss prevention — is what HAVEN was built to close.
+
+Solving it takes more than a display and some buttons: the system has to know who is authenticated, which slot is occupied, where the mechanism physically is, whether the machine is homed, whether a tool was actually returned, and whether hardware state agrees with software state at every step.
 
 ## Demo
 
-<video
-  src="/media/projects/haven-shop-assistant/demo_compressed.mp4"
-  controls
-  muted
-  playsinline
+<YouTube
+  id="GPG5MJTYQkU"
+  title="HAVEN shop assistant demo"
 />
 
 ## Project overview
@@ -42,9 +42,23 @@ University shops and makerspaces need a way to control access to shared tools wi
   </figcaption>
 </figure>
 
-## What I built
+## What we built
 
-HAVEN is a smart tool vending prototype with a Raspberry Pi at the centre. The Pi runs a Docker Compose stack: a React + TypeScript kiosk frontend, a FastAPI backend, an MQTT event bus, and integrations with Moonraker and Klipper for motion control. A custom encoder-multiplexer PCB reports physical slot positions back to the bridge layer so the software always knows where the mechanism actually is.
+HAVEN is a smart tool vending prototype with a Raspberry Pi at the centre. We built it as a capstone team: two mechanical teammates designed and fabricated the machine itself - frame, rotary cakes, gantry, and doors - while I served as the software architect and electrical designer, owning everything from the software system design to the custom PCB.
+
+The Pi runs a Docker Compose stack: a React + TypeScript kiosk frontend, a FastAPI backend, an MQTT event bus, and integrations with Moonraker and Klipper for motion control. A custom encoder-multiplexer PCB reports physical slot positions back to the bridge layer so the software always knows where the mechanism actually is.
+
+<figure>
+  <img
+    src="/media/projects/haven-shop-assistant/software_architecture_diagram.png"
+    alt="Software architecture diagram showing the Docker containers, motion control, and sensor hub layers with the full tech stack"
+  />
+  <figcaption>
+    Software architecture. The Pi hosts the Docker containers (FastAPI, SQLite, Mosquitto), the BTT
+    Octopus Max EZ runs Klipper firmware for the stepper motors, and an ESP32 sensor hub aggregates
+    the six encoders.
+  </figcaption>
+</figure>
 
 ```
 User / Admin Touchscreen
@@ -156,6 +170,20 @@ Returns follow a symmetric but distinct path. The slot model updates before the 
 
 ## Hardware
 
+### Electrical architecture
+
+<figure>
+  <img
+    src="/media/projects/haven-shop-assistant/electrical_architecture_final.png"
+    alt="Electrical architecture diagram: 24V fuse box feeding the BTT Octopus Max EZ and Raspberry Pi, with the custom encoder PCB closing the loop"
+  />
+  <figcaption>
+    Final electrical architecture. A 24V fuse box powers the BTT Octopus Max EZ driving nine motors
+    and the Raspberry Pi orchestrating over serial; the custom PCB (nine encoders → I2C mux → ESP32)
+    reports physical position back to the Pi on its own serial link, closing the verification loop.
+  </figcaption>
+</figure>
+
 ### Encoder multiplexer PCB
 
 <figure>
@@ -166,6 +194,40 @@ Returns follow a symmetric but distinct path. The slot model updates before the 
   <figcaption>
     Custom encoder MUX PCB designed in KiCad. Aggregates encoder signals from all six cakes onto a
     single serial bus back to the Pi, reducing GPIO pressure and keeping the wire harness manageable.
+  </figcaption>
+</figure>
+
+<div class="img-pair">
+  <figure>
+    <img
+      src="/media/projects/haven-shop-assistant/pcb_schematic.png"
+      alt="KiCad schematic of the encoder multiplexer board around a TCA9548A I2C multiplexer"
+    />
+    <figcaption>
+      Schematic: a TCA9548A I2C multiplexer fans out to nine encoder headers, with the ESP32 header
+      on the left.
+    </figcaption>
+  </figure>
+  <figure>
+    <img
+      src="/media/projects/haven-shop-assistant/pcb_design.png"
+      alt="KiCad board layout of the encoder multiplexer PCB"
+    />
+    <figcaption>Board layout, with the encoder headers arranged around the mux for short traces.</figcaption>
+  </figure>
+</div>
+
+### IGEN logo PCB
+
+<figure>
+  <img
+    src="/media/projects/haven-shop-assistant/igen_pcb_render.png"
+    alt="KiCad render of the UBC IGEN logo as a PCB with an embedded NFC coil"
+  />
+  <figcaption>
+    A side quest: the IGEN logo rebuilt as a PCB with an embedded NFC antenna. Half merch idea, half
+    pitch — the shop could hand these out as tap-to-visit keepsakes that link straight to project
+    pages. I would love to see this adopted in the IGEN space for real.
   </figcaption>
 </figure>
 
@@ -224,4 +286,4 @@ These were the problems that only appeared once the software touched the real ma
 
 ## What is next
 
-Automated tests for slot allocation and state transition edge cases, a richer admin event timeline with timestamps and actor labels, and hardware-in-the-loop encoder verification in CI. The sequence diagrams and demo video here are the starting point for documentation that should eventually let someone understand the full system in under five minutes without me in the room.
+Automated tests for slot allocation and state transition edge cases, a richer admin event timeline with timestamps and actor labels, and hardware-in-the-loop encoder verification in CI. The sequence diagrams and demo video here are the starting point for documentation that should eventually let someone understand the full system in under five minutes without any of us in the room.

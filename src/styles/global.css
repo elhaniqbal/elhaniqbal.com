@@ -658,44 +658,28 @@ main {
   max-width: 55ch;
 }
 
-/* ─── About ──────────────────────────────── */
+/* ─── Contact ────────────────────────────── */
 
-.about-content {
+.contact-content {
   padding-block: 2.5rem;
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  justify-content: center;
+  grid-template-columns: minmax(0, 640px);
 }
 
-.about-card {
+.contact-card {
   padding: 1.5rem;
   background: var(--bg-2);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
 }
 
-.about-card h2 {
+.contact-card h2 {
   font-size: 0.9375rem;
   font-weight: 600;
   color: var(--text);
   margin-bottom: 1rem;
 }
-
-.clean-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.clean-list li {
-  font-size: 0.9375rem;
-  color: var(--text-2);
-  padding-block: 0.625rem;
-  border-bottom: 1px solid var(--border);
-  line-height: 1.5;
-}
-
-.clean-list li:first-child { padding-top: 0; }
-.clean-list li:last-child { border-bottom: none; padding-bottom: 0; }
 
 .contact-list {
   display: flex;
@@ -711,6 +695,55 @@ main {
 
 .contact-list a:hover {
   text-decoration: underline;
+}
+
+/* ─── Contact form ───────────────────────── */
+
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.contact-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-2);
+}
+
+.contact-form input[type='text'],
+.contact-form input[type='email'],
+.contact-form textarea {
+  padding: 0.625rem 0.75rem;
+  font: inherit;
+  font-size: 0.9375rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border-2);
+  border-radius: var(--r);
+}
+
+.contact-form input:focus-visible,
+.contact-form textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.contact-form textarea {
+  resize: vertical;
+  min-height: 8rem;
+}
+
+.contact-form button {
+  align-self: flex-start;
+}
+
+/* Web3Forms honeypot — must be invisible to humans but present in the DOM */
+.botcheck {
+  display: none;
 }
 
 /* ─── Case study ─────────────────────────── */
@@ -1294,10 +1327,6 @@ main {
 @media (max-width: 768px) {
   .nav-link { display: none; }
   .nav-contact { display: none; }
-
-  .about-content {
-    grid-template-columns: 1fr;
-  }
 
   .blog-entry {
     flex-direction: column;

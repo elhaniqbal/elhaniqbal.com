@@ -1,43 +1,73 @@
 ---
 title: 'Trash-E: Autonomous Underwater Trash Remediation Robot'
-subtitle: 'Award-winning autonomous underwater debris collection robot using an RC floating platform, crane-line mechanism, and depth-camera-assisted perception. Won CSME NDC 2025 and received recognition from MindFuel.ca.'
-date: '2025'
-status: 'Competition winner · robotics'
-featured: false
+subtitle: 'An autonomous underwater debris collection robot built on an RC floating platform with a crane-line mechanism and depth-camera-assisted perception.'
+date: '2024'
+status: 'IGEN 330 Capstone Project'
+featured: true
 impact:
-  - 'Won the CSME 2025 National Design Competition and received recognition and funding from MindFuel.ca.'
-  - 'Integrated mechanical design, electrical systems, computer vision constraints, and physical testing into a working prototype under competition conditions.'
-  - 'Learned how to communicate technical tradeoffs honestly under demo pressure, even when the hardware is being difficult.'
+  - 'Scoped and re-scoped the technical stack under real deadlines — including making the call to drop ROS when its learning curve stopped paying rent.'
+  - 'Integrated mechanical design, electrical systems, computer vision constraints, and physical testing into a working prototype.'
+  - 'Recognized at CSME NDC 2025, the 2024 Canada Tech Futures Challenge, and by MindFuel.ca.'
 stack: ['Robotics', 'Computer Vision', 'Mechanical Design', 'Electrical Systems', 'Depth Camera', 'Prototype Testing']
 links:
   - label: 'MindFuel Recognition'
     href: 'https://mindfuel.ca/project/trash-e-trash-remediation-in-aquatic-settings-and-other-hydro-environments/'
-heroImage: ''
-videoUrl: ''
+heroImage: '/media/projects/underwater-trash-robot/trashe-poster.png'
 ---
+
+import YouTube from '../../components/YouTube.astro';
 
 ## The problem
 
-Underwater trash is hard to detect, localize, and collect. Visibility is poor. The platform needs to be stable enough to maneuver precisely while carrying a retrieval mechanism. And everything has to work in the real water, not just in the lab.
+Underwater trash is hard to detect, localize, and collect. Visibility is poor. The platform needs to be stable enough to maneuver precisely while carrying a retrieval mechanism. And everything has to work in real water, not just in the lab.
 
 ## What we built
 
-Trash-E is an RC floating platform with a crane-line collection mechanism and a depth camera for underwater perception. The goal was to detect trash-like objects underwater, localize them, and retrieve them with the physical crane mechanism.
+Trash-E is an RC floating platform with a crane-line collection mechanism and a depth camera for underwater perception. The goal: detect trash-like objects underwater, localize them, and retrieve them with the physical crane mechanism — reliably enough to survive a live demo in real water.
 
-The system had to handle water, imperfect visibility, platform stability, and the unpredictable behavior of a real retrieval mechanism under load. It also had to work well enough on demo day to win a national competition, which it did.
+<figure>
+  <img
+    src="/media/projects/underwater-trash-robot/jericho_testing.jpg"
+    alt="Trash-E platform being tested in open water at Jericho Beach"
+  />
+  <figcaption>
+    Real-water testing at Jericho. The ocean does not care about your test plan.
+  </figcaption>
+</figure>
 
-## What actually happened at competition
+## The scoping lessons
 
-Technically, the prototype had issues. Hardware prototypes always do. The crane mechanism had opinions about when it wanted to cooperate. The depth camera had opinions about visibility conditions. The platform had opinions about current.
+This project taught me more about **project scoping and stack decisions** than any course lecture could.
 
-We won anyway, because the concept was strong, the integration demonstrated genuine engineering ambition, and we were honest about the tradeoffs during the judging. That experience taught me something real: being clear about what works and what does not, and why, is a more credible engineering position than pretending everything is perfect.
+We started, like every ambitious robotics team, by reaching for ROS. It's the "correct" tool, and I was very confident about this. Step one was figuring out whether we wanted ROS or ROS2, which are related the way a parent and their estranged adult child are related. Step two was picking a distribution - Noetic? Foxy? Humble? - each married to a specific Ubuntu version, none of which I had. So I finally did the thing I'd been putting off for years and dual-booted my PC into Linux, and felt like a Real Engineer™ for approximately one evening.
+
+This was also before ChatGPT went mainstream, so there was no chatbot to gently explain my build errors to me. Debugging meant spelunking through decade-old ROS Answers threads where the accepted solution was "nevermind, fixed it" with no elaboration. I got humbled. Repeatedly. By a middleware.
+
+After weeks of this, we admitted the obvious: the learning curve was consuming time we didn't have, for capabilities we didn't actually need. Dropping ROS for a simpler, more direct architecture felt like a defeat at the time. In hindsight it was the single best engineering decision we made. Choosing a stack isn't about what's most powerful; it's about what your team can actually ship within the timeline.
+
+Then came the hardware. Component decisions, components fighting back, and the unglamorous grind of actually sourcing parts on a student budget and a competition deadline. This is where my time at UBC UAS turned out to be critical - I had already fought similar battles with comparable tech there, and a lot of Trash-E came together by macgyvering that experience onto new problems: repurposing what we could get, adapting what we couldn't, and knowing which corners were safe to cut.
 
 ## Recognition
 
-The project won the CSME 2025 National Design Competition and was featured by MindFuel.ca as part of their recognition of innovative student engineering work. You can read about it on their site if you want more detail.
+The project won the CSME 2025 National Design Competition and multiple awards at the [2024 Canada Tech Futures Challenge](https://mindfuel.ca/innovation-showcase/), and was featured by [MindFuel.ca](https://mindfuel.ca/project/trash-e-trash-remediation-in-aquatic-settings-and-other-hydro-environments/) as part of their recognition of innovative student engineering work.
 
-## What it showed me
+Here's the pitch video we made for MindFuel:
 
-This project was valuable because physical prototypes teach things that software projects do not. The feedback is immediate and unambiguous. If the mechanism jams, it jams. If the perception fails, you can see it fail in real time. There is no hiding behind "it works on my machine."
+<YouTube
+  id="uhAi25IBcQ4"
+  title="Trash-E pitch video for MindFuel"
+/>
 
-It also reinforced that cross-disciplinary engineering is genuinely harder than single-domain work. Getting the mechanical, electrical, and software pieces to cooperate under real conditions, on a timeline, with a team, is the kind of problem that does not have a clean solution.
+<figure>
+  <img
+    src="/media/projects/underwater-trash-robot/trashe-poster.png"
+    alt="Trash-E Poster"
+  />
+  <figcaption>
+    The final poster presented at UBC Design and Innovation Day 2024
+  </figcaption>
+</figure>
+
+## Looking back
+
+Tensions ran high at points - deadlines, broken hardware, communication. But yet this is a project I look back on quite fondly. Every time I run into the team now, we end up laughing about things that gave us nightmares during testing: the mechanism jamming at the worst moment, the frantic beach-side fixes, the stack decisions we argued over. The struggles became the funny stories, and honestly, those are the parts I miss the most. That's the quiet lesson of hardware projects: the pain is temporary, but it's exactly what makes them memorable.

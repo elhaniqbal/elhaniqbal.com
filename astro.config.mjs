@@ -15,7 +15,8 @@ export default defineConfig({
   prerenderConflictBehavior: 'error',
 
   // expressiveCode must come before mdx so it can process code blocks in .mdx files.
-  // It outputs CSS classes (not inline styles), making it fully CSP-compatible.
+  // Note: it emits token colors as style attributes (CSS custom properties),
+  // so the CSP in public/_headers must keep style-src 'unsafe-inline'.
   integrations: [
     expressiveCode({
       themes: ['github-light', 'github-dark'],
@@ -70,50 +71,11 @@ export default defineConfig({
     },
   },
 
-  security: {
-    // Astro computes a SHA-256 hash for every <script is:inline> and inline <style>
-    // block at build time and injects a <meta http-equiv="Content-Security-Policy">
-    // on each page. This eliminates 'unsafe-inline' without manual hash management.
-    //
-    // Important limitations of meta-tag CSP (vs an HTTP header):
-    //   • frame-ancestors is silently ignored in <meta> tags — framing protection
-    //     is handled by X-Frame-Options in public/_headers instead.
-    //   • Only applies to HTML documents, not standalone .css/.js responses.
-    //
-    // Extending later:
-    //   • Video embeds (YouTube/Vimeo): add "frame-src https://www.youtube.com"
-    //   • External images: extend img-src with the source domain
-    //   • Analytics/fonts from other CDNs: extend the relevant src directive
-    csp: {
-      algorithm: 'SHA-256',
-      directives: [
-        // Block everything not explicitly allowed below.
-        "default-src 'none'",
-        // Same-origin images and inline data: URIs (used by SVG/favicon).
-        "img-src 'self' data:",
-        // Google Fonts files are served from gstatic.com.
-        "font-src 'self' https://fonts.gstatic.com",
-        // No fetch/XHR/WebSocket — this site makes no API calls.
-        "connect-src 'none'",
-        // Prevent <base> tag injection attacks.
-        "base-uri 'self'",
-        // No form submissions off-origin (no forms exist, but belt-and-suspenders).
-        "form-action 'self'",
-        // Tell browsers to upgrade any accidental http:// sub-resource to https://.
-        "upgrade-insecure-requests",
-      ],
-      styleDirective: {
-        // 'self' covers Astro-bundled CSS in /_astro/.
-        // googleapis.com serves the Google Fonts @import stylesheet.
-        // Astro automatically appends hashes for all remaining inline <style> blocks.
-        resources: ["'self'", 'https://fonts.googleapis.com'],
-      },
-      scriptDirective: {
-        // 'self' covers Astro-bundled module scripts served from /_astro/.
-        // Astro automatically appends hashes for all <script is:inline> blocks
-        // (the FOUC-prevention theme read and the theme-toggle handler in BaseLayout).
-        resources: ["'self'"],
-      },
-    },
-  },
+  // Content-Security-Policy is NOT managed here. Astro's security.csp feature
+  // uses per-build hashes, which silently broke inline scripts (theme toggle)
+  // and expressive-code's style attributes (syntax highlighting). The CSP is
+  // instead a static HTTP header in public/_headers, served by Cloudflare
+  // Pages — a fixed allowlist with 'unsafe-inline', so nothing drifts between
+  // builds. Extend the relevant directive there when adding external embeds,
+  // images, or analytics.
 });
