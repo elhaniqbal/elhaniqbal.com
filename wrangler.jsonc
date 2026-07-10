@@ -1,0 +1,11 @@
+{
+	// Static-assets-only Worker: no server code, wrangler deploy just uploads ./dist.
+	// Name must match the Workers project created in the Cloudflare dashboard.
+	"name": "personalwebsite",
+	"compatibility_date": "2026-07-10",
+	"assets": {
+		"directory": "./dist",
+		// Serve dist/404.html for unmatched routes.
+		"not_found_handling": "404-page"
+	}
+}
