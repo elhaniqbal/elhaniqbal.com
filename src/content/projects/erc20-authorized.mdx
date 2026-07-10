@@ -13,6 +13,9 @@ links:
     href: 'https://github.com/orSolocate/Authorization-AUTHD'
 ---
 
+import Figure from '../../components/Figure.astro';
+import authdDemo from '../../assets/media/projects/erc20-authorized/AUTHD-DEMO.png';
+
 ## How I got here
 
 My path into this project was gradual. A cybersecurity course first taught me the core of how blockchains actually work — hashing, consensus, and why Bitcoin is designed the way it is. Additionally during a co-op term I briefly worked around Samsung's Knox Matrix, which showed me blockchain concepts applied to something other than currency. By the time I took a dedicated blockchain course, I wanted to build a real token project end to end, not just read about one.
@@ -33,15 +36,12 @@ This was a two-person project, and my goal was to touch every layer of it:
 
 ## Demo
 
-<figure>
-  <img
-    src="/media/projects/erc20-authorized/AUTHD-DEMO.png"
-    alt="The ERC20Authorized frontend: wallet connection, authorization table, and authorize/approve/revoke flows against the deployed Sepolia contracts"
-  />
-  <figcaption>
-    The React frontend running against the contracts deployed on Sepolia.
-  </figcaption>
-</figure>
+<Figure
+  src={authdDemo}
+  alt="The ERC20Authorized frontend: wallet connection, authorization table, and authorize/approve/revoke flows against the deployed Sepolia contracts"
+>
+  The React frontend running against the contracts deployed on Sepolia.
+</Figure>
 
 ## What was actually hard
 

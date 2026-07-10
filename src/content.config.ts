@@ -3,7 +3,9 @@ import { glob } from 'astro/loaders';
 import { z } from 'astro/zod'
 const projects = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/projects' }),
-  schema: z.object({
+  // image() resolves heroImage paths relative to the content file and hands
+  // ImageMetadata to layouts, so heroes go through the astro:assets pipeline.
+  schema: ({ image }) => z.object({
     title: z.string(),
     subtitle: z.string(),
     date: z.string(),
@@ -13,7 +15,7 @@ const projects = defineCollection({
     impact: z.array(z.string()),
     stack: z.array(z.string()),
     links: z.array(z.object({ label: z.string(), href: z.string() })).default([]),
-    heroImage: z.string().optional(),
+    heroImage: image().optional(),
     videoUrl: z.string().optional()
   })
 });

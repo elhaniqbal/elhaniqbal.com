@@ -12,10 +12,13 @@ stack: ['Robotics', 'Computer Vision', 'Mechanical Design', 'Electrical Systems'
 links:
   - label: 'MindFuel Recognition'
     href: 'https://mindfuel.ca/project/trash-e-trash-remediation-in-aquatic-settings-and-other-hydro-environments/'
-heroImage: '/media/projects/underwater-trash-robot/trashe-poster.png'
+heroImage: '../../assets/media/projects/underwater-trash-robot/trashe-poster.webp'
 ---
 
 import YouTube from '../../components/YouTube.astro';
+import Figure from '../../components/Figure.astro';
+import jerichoTesting from '../../assets/media/projects/underwater-trash-robot/jericho_testing.webp';
+import trashePoster from '../../assets/media/projects/underwater-trash-robot/trashe-poster.webp';
 
 ## The problem
 
@@ -25,15 +28,12 @@ Underwater trash is hard to detect, localize, and collect. Visibility is poor. T
 
 Trash-E is an RC floating platform with a crane-line collection mechanism and a depth camera for underwater perception. The goal: detect trash-like objects underwater, localize them, and retrieve them with the physical crane mechanism — reliably enough to survive a live demo in real water.
 
-<figure>
-  <img
-    src="/media/projects/underwater-trash-robot/jericho_testing.jpg"
-    alt="Trash-E platform being tested in open water at Jericho Beach"
-  />
-  <figcaption>
-    Real-water testing at Jericho. The ocean does not care about your test plan.
-  </figcaption>
-</figure>
+<Figure
+  src={jerichoTesting}
+  alt="Trash-E platform being tested in open water at Jericho Beach"
+>
+  Real-water testing at Jericho. The ocean does not care about your test plan.
+</Figure>
 
 ## The scoping lessons
 
@@ -58,15 +58,9 @@ Here's the pitch video we made for MindFuel:
   title="Trash-E pitch video for MindFuel"
 />
 
-<figure>
-  <img
-    src="/media/projects/underwater-trash-robot/trashe-poster.png"
-    alt="Trash-E Poster"
-  />
-  <figcaption>
-    The final poster presented at UBC Design and Innovation Day 2024
-  </figcaption>
-</figure>
+<Figure src={trashePoster} alt="Trash-E Poster">
+  The final poster presented at UBC Design and Innovation Day 2024
+</Figure>
 
 ## Looking back
 

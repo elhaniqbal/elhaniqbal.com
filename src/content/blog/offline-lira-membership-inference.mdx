@@ -7,6 +7,9 @@ draft: false
 ---
 
 import YouTube from '../../components/YouTube.astro';
+import Figure from '../../components/Figure.astro';
+import mvCdfLoglog from '../../assets/media/blog/lira-ml-privacy-research/offline_lira_mv_cdf_loglog.png';
+import augExperimentLoglog from '../../assets/media/blog/lira-ml-privacy-research/aug_experiment_loglog.png';
 
 Modern machine learning systems can leak information about their training data. Membership inference asks whether an attacker can determine if a specific example was included in a model's training set. This matters for privacy, data governance, LLM safety, and responsible AI deployment — if your medical record, your photo, or your writing was used to train a model, membership inference is one of the few tools that can even attempt to detect it.
 
@@ -51,27 +54,21 @@ Representative feature vectors included:
 
 Attack performance is reported the way the LiRA paper argues it should be: log-log ROC curves and true-positive rates at very low false-positive rates (1e-4, 1e-3, 1e-2), not just average-case AUC. An attack that confidently identifies 1% of members with essentially zero false positives is a real privacy violation even if its AUC looks unremarkable.
 
-<figure>
-  <img
-    src="/media/blog/lira-ml-privacy-research/offline_lira_mv_cdf_loglog.png"
-    alt="Log-log ROC curves comparing scalar CDF and multivariate CDF offline LiRA variants over loss, margin, and entropy feature combinations"
-  />
-  <figcaption>
-    Scalar vs. multivariate offline LiRA. Scalar loss scoring lands around AUC 0.678; the best multivariate combos (margin + entropy, and margin + entropy + augmentation-averaged loss) reach ~0.746, with TPR around 1–2% at FPR = 1e-4.
-  </figcaption>
-</figure>
+<Figure
+  src={mvCdfLoglog}
+  alt="Log-log ROC curves comparing scalar CDF and multivariate CDF offline LiRA variants over loss, margin, and entropy feature combinations"
+>
+  Scalar vs. multivariate offline LiRA. Scalar loss scoring lands around AUC 0.678; the best multivariate combos (margin + entropy, and margin + entropy + augmentation-averaged loss) reach ~0.746, with TPR around 1–2% at FPR = 1e-4.
+</Figure>
 
 We also ran an augmentation experiment: instead of querying the model once per example, query it on several augmented views (shifts, noise) and derive features from the distribution of losses across views — average loss, loss standard deviation, mean prediction entropy. Members tend to be robust to augmentations of themselves in ways non-members are not, so these features carry real signal.
 
-<figure>
-  <img
-    src="/media/blog/lira-ml-privacy-research/aug_experiment_loglog.png"
-    alt="Log-log ROC curves for the augmentation experiment, sweeping avg_loss, std_loss, and entropy_mean_pred features over base, shift, noise, and combined augmentations"
-  />
-  <figcaption>
-    Augmentation feature sweep: {'{'}avg_loss | std_loss | entropy_mean_pred{'}'} × {'{'}base | shift | noise | all{'}'}. Featurewise combinations of augmentation statistics with margin and entropy consistently beat the scalar baselines.
-  </figcaption>
-</figure>
+<Figure
+  src={augExperimentLoglog}
+  alt="Log-log ROC curves for the augmentation experiment, sweeping avg_loss, std_loss, and entropy_mean_pred features over base, shift, noise, and combined augmentations"
+>
+  Augmentation feature sweep: {'{'}avg_loss | std_loss | entropy_mean_pred{'}'} × {'{'}base | shift | noise | all{'}'}. Featurewise combinations of augmentation statistics with margin and entropy consistently beat the scalar baselines.
+</Figure>
 
 Beyond the plots, most of the actual work was experiment hygiene: deterministic data splits, strict target-vs-shadow separation, checkpoint management across 256+ training runs, best-epoch vs. last-epoch tradeoffs, flip detection when scores have the wrong orientation, and shape-safe analysis code.
 

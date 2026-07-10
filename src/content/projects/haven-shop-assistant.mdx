@@ -12,10 +12,27 @@ stack: ['Raspberry Pi', 'FastAPI', 'React', 'TypeScript', 'Docker', 'MQTT', 'Kli
 links:
   - label: 'GitHub'
     href: 'https://github.com/elhaniqbal/igen-shop-assistant'
-heroImage: '/media/projects/haven-shop-assistant/demo_admin_ui_manual_control.png'
+heroImage: '../../assets/media/projects/haven-shop-assistant/demo_admin_ui_manual_control.png'
 ---
 
 import YouTube from '../../components/YouTube.astro';
+import Figure from '../../components/Figure.astro';
+import poster from '../../assets/media/projects/haven-shop-assistant/poster.webp';
+import softwareArchitecture from '../../assets/media/projects/haven-shop-assistant/software_architecture_diagram.png';
+import cakeAndSlotState from '../../assets/media/projects/haven-shop-assistant/cake_and_slot_state.png';
+import seqDispenseSimplified from '../../assets/media/projects/haven-shop-assistant/sequence_diagram_dispense_simplified.png';
+import seqDispenseZoomed from '../../assets/media/projects/haven-shop-assistant/sequence_diagram_dispense_zoomed.png';
+import seqDispenseZoomed2 from '../../assets/media/projects/haven-shop-assistant/sequence_diagram_dispense_zoomed_2.png';
+import seqReturnSimplified from '../../assets/media/projects/haven-shop-assistant/sequence_diagram_return_simplified.png';
+import seqReturnZoomed from '../../assets/media/projects/haven-shop-assistant/sequence_diagram_return_zoomed.png';
+import seqExampleCommand from '../../assets/media/projects/haven-shop-assistant/sequence_diagram_example_command.png';
+import electricalArchitecture from '../../assets/media/projects/haven-shop-assistant/electrical_architecture_final.png';
+import encoderMuxPcb from '../../assets/media/projects/haven-shop-assistant/encoder_mux_pcb.png';
+import pcbSchematic from '../../assets/media/projects/haven-shop-assistant/pcb_schematic.png';
+import pcbDesign from '../../assets/media/projects/haven-shop-assistant/pcb_design.png';
+import igenPcbRender from '../../assets/media/projects/haven-shop-assistant/igen_pcb_render.png';
+import customPcbCard from '../../assets/media/projects/haven-shop-assistant/custom_pcb_card.png';
+import demoAdminUi from '../../assets/media/projects/haven-shop-assistant/demo_admin_ui_manual_control.png';
 
 ## The problem
 
@@ -32,15 +49,9 @@ Solving it takes more than a display and some buttons: the system has to know wh
 
 ## Project overview
 
-<figure>
-  <img
-    src="/media/projects/haven-shop-assistant/Poster.svg"
-    alt="Haven Shop Assistant capstone project poster"
-  />
-  <figcaption>
-    Capstone poster summarising system scope, hardware components, software stack, and design goals.
-  </figcaption>
-</figure>
+<Figure src={poster} alt="Haven Shop Assistant capstone project poster">
+  Capstone poster summarising system scope, hardware components, software stack, and design goals.
+</Figure>
 
 ## What we built
 
@@ -48,17 +59,14 @@ HAVEN is a smart tool vending prototype with a Raspberry Pi at the centre. We bu
 
 The Pi runs a Docker Compose stack: a React + TypeScript kiosk frontend, a FastAPI backend, an MQTT event bus, and integrations with Moonraker and Klipper for motion control. A custom encoder-multiplexer PCB reports physical slot positions back to the bridge layer so the software always knows where the mechanism actually is.
 
-<figure>
-  <img
-    src="/media/projects/haven-shop-assistant/software_architecture_diagram.png"
-    alt="Software architecture diagram showing the Docker containers, motion control, and sensor hub layers with the full tech stack"
-  />
-  <figcaption>
-    Software architecture. The Pi hosts the Docker containers (FastAPI, SQLite, Mosquitto), the BTT
-    Octopus Max EZ runs Klipper firmware for the stepper motors, and an ESP32 sensor hub aggregates
-    the six encoders.
-  </figcaption>
-</figure>
+<Figure
+  src={softwareArchitecture}
+  alt="Software architecture diagram showing the Docker containers, motion control, and sensor hub layers with the full tech stack"
+>
+  Software architecture. The Pi hosts the Docker containers (FastAPI, SQLite, Mosquitto), the BTT
+  Octopus Max EZ runs Klipper firmware for the stepper motors, and an ESP32 sensor hub aggregates
+  the six encoders.
+</Figure>
 
 ```
 User / Admin Touchscreen
@@ -82,16 +90,10 @@ BTT Octopus Max EZ + steppers + encoders
 
 Each rotary dispenser is called a **cake**. A cake holds indexed **slots**; slot 0 is permanently reserved as the home/empty position. The backend tracks occupancy, rotation direction, and position independently from the hardware; this separation is what allows recovery when physical and software states diverge.
 
-<figure>
-  <img
-    src="/media/projects/haven-shop-assistant/cake_and_slot_state.png"
-    alt="Cake and slot state diagram"
-  />
-  <figcaption>
-    Slot model for a single cake. The system enforces bounded rotation, always taking the shortest
-    path and never wrapping past slot 0, which prevents direction debt from accumulating across cycles.
-  </figcaption>
-</figure>
+<Figure src={cakeAndSlotState} alt="Cake and slot state diagram">
+  Slot model for a single cake. The system enforces bounded rotation, always taking the shortest
+  path and never wrapping past slot 0, which prevents direction debt from accumulating across cycles.
+</Figure>
 
 ---
 
@@ -99,33 +101,19 @@ Each rotary dispenser is called a **cake**. A cake holds indexed **slots**; slot
 
 A dispense starts with RFID authentication, steps through machine homing, rotation to the target cake and slice, door presentation, explicit user confirmation, and finally a slot model update. The user only sees a few steps; a lot happens in between.
 
-<figure>
-  <img
-    src="/media/projects/haven-shop-assistant/sequence_diagram_dispense_simplified.png"
-    alt="Dispense sequence, simplified view"
-  />
-  <figcaption>
-    Simplified view showing the main actors and the state transitions a user experiences.
-  </figcaption>
-</figure>
+<Figure src={seqDispenseSimplified} alt="Dispense sequence, simplified view">
+  Simplified view showing the main actors and the state transitions a user experiences.
+</Figure>
 
 The zoomed views show what the bridge and Moonraker layers are doing during each phase:
 
 <div class="img-pair">
-  <figure>
-    <img
-      src="/media/projects/haven-shop-assistant/sequence_diagram_dispense_zoomed.png"
-      alt="Dispense sequence: authentication and homing phase"
-    />
-    <figcaption>Authentication and homing phase</figcaption>
-  </figure>
-  <figure>
-    <img
-      src="/media/projects/haven-shop-assistant/sequence_diagram_dispense_zoomed_2.png"
-      alt="Dispense sequence: rotation, presentation, and confirmation phase"
-    />
-    <figcaption>Rotation, presentation, and confirmation phase</figcaption>
-  </figure>
+  <Figure src={seqDispenseZoomed} alt="Dispense sequence: authentication and homing phase">
+    Authentication and homing phase
+  </Figure>
+  <Figure src={seqDispenseZoomed2} alt="Dispense sequence: rotation, presentation, and confirmation phase">
+    Rotation, presentation, and confirmation phase
+  </Figure>
 </div>
 
 ---
@@ -135,36 +123,25 @@ The zoomed views show what the bridge and Moonraker layers are doing during each
 Returns follow a symmetric but distinct path. The slot model updates before the machine moves, and the encoder must confirm the physical return before the backend closes the transaction. This ordering prevents silent data corruption if the user pulls a tool and the machine loses power mid-flow.
 
 <div class="img-pair">
-  <figure>
-    <img
-      src="/media/projects/haven-shop-assistant/sequence_diagram_return_simplified.png"
-      alt="Return sequence, simplified view"
-    />
-    <figcaption>Simplified return flow</figcaption>
-  </figure>
-  <figure>
-    <img
-      src="/media/projects/haven-shop-assistant/sequence_diagram_return_zoomed.png"
-      alt="Return sequence with encoder verification"
-    />
-    <figcaption>Detailed return with encoder verification</figcaption>
-  </figure>
+  <Figure src={seqReturnSimplified} alt="Return sequence, simplified view">
+    Simplified return flow
+  </Figure>
+  <Figure src={seqReturnZoomed} alt="Return sequence with encoder verification">
+    Detailed return with encoder verification
+  </Figure>
 </div>
 
 ---
 
 ## How a command travels through the stack
 
-<figure>
-  <img
-    src="/media/projects/haven-shop-assistant/sequence_diagram_example_command.png"
-    alt="Example command travelling from frontend through to Klipper macro"
-  />
-  <figcaption>
-    A single admin command moving from the React frontend → FastAPI → MQTT broker → bridge layer →
-    Moonraker REST → Klipper macro. Each hop is explicit and observable.
-  </figcaption>
-</figure>
+<Figure
+  src={seqExampleCommand}
+  alt="Example command travelling from frontend through to Klipper macro"
+>
+  A single admin command moving from the React frontend → FastAPI → MQTT broker → bridge layer →
+  Moonraker REST → Klipper macro. Each hop is explicit and observable.
+</Figure>
 
 ---
 
@@ -172,92 +149,61 @@ Returns follow a symmetric but distinct path. The slot model updates before the 
 
 ### Electrical architecture
 
-<figure>
-  <img
-    src="/media/projects/haven-shop-assistant/electrical_architecture_final.png"
-    alt="Electrical architecture diagram: 24V fuse box feeding the BTT Octopus Max EZ and Raspberry Pi, with the custom encoder PCB closing the loop"
-  />
-  <figcaption>
-    Final electrical architecture. A 24V fuse box powers the BTT Octopus Max EZ driving nine motors
-    and the Raspberry Pi orchestrating over serial; the custom PCB (nine encoders → I2C mux → ESP32)
-    reports physical position back to the Pi on its own serial link, closing the verification loop.
-  </figcaption>
-</figure>
+<Figure
+  src={electricalArchitecture}
+  alt="Electrical architecture diagram: 24V fuse box feeding the BTT Octopus Max EZ and Raspberry Pi, with the custom encoder PCB closing the loop"
+>
+  Final electrical architecture. A 24V fuse box powers the BTT Octopus Max EZ driving nine motors
+  and the Raspberry Pi orchestrating over serial; the custom PCB (nine encoders → I2C mux → ESP32)
+  reports physical position back to the Pi on its own serial link, closing the verification loop.
+</Figure>
 
 ### Encoder multiplexer PCB
 
-<figure>
-  <img
-    src="/media/projects/haven-shop-assistant/encoder_mux_pcb.png"
-    alt="Custom encoder multiplexer PCB"
-  />
-  <figcaption>
-    Custom encoder MUX PCB designed in KiCad. Aggregates encoder signals from all six cakes onto a
-    single serial bus back to the Pi, reducing GPIO pressure and keeping the wire harness manageable.
-  </figcaption>
-</figure>
+<Figure src={encoderMuxPcb} alt="Custom encoder multiplexer PCB">
+  Custom encoder MUX PCB designed in KiCad. Aggregates encoder signals from all six cakes onto a
+  single serial bus back to the Pi, reducing GPIO pressure and keeping the wire harness manageable.
+</Figure>
 
 <div class="img-pair">
-  <figure>
-    <img
-      src="/media/projects/haven-shop-assistant/pcb_schematic.png"
-      alt="KiCad schematic of the encoder multiplexer board around a TCA9548A I2C multiplexer"
-    />
-    <figcaption>
-      Schematic: a TCA9548A I2C multiplexer fans out to nine encoder headers, with the ESP32 header
-      on the left.
-    </figcaption>
-  </figure>
-  <figure>
-    <img
-      src="/media/projects/haven-shop-assistant/pcb_design.png"
-      alt="KiCad board layout of the encoder multiplexer PCB"
-    />
-    <figcaption>Board layout, with the encoder headers arranged around the mux for short traces.</figcaption>
-  </figure>
+  <Figure
+    src={pcbSchematic}
+    alt="KiCad schematic of the encoder multiplexer board around a TCA9548A I2C multiplexer"
+  >
+    Schematic: a TCA9548A I2C multiplexer fans out to nine encoder headers, with the ESP32 header
+    on the left.
+  </Figure>
+  <Figure src={pcbDesign} alt="KiCad board layout of the encoder multiplexer PCB">
+    Board layout, with the encoder headers arranged around the mux for short traces.
+  </Figure>
 </div>
 
 ### IGEN logo PCB
 
-<figure>
-  <img
-    src="/media/projects/haven-shop-assistant/igen_pcb_render.png"
-    alt="KiCad render of the UBC IGEN logo as a PCB with an embedded NFC coil"
-  />
-  <figcaption>
-    A side quest: the IGEN logo rebuilt as a PCB with an embedded NFC antenna. Half merch idea, half
-    pitch — the shop could hand these out as tap-to-visit keepsakes that link straight to project
-    pages. I would love to see this adopted in the IGEN space for real.
-  </figcaption>
-</figure>
+<Figure
+  src={igenPcbRender}
+  alt="KiCad render of the UBC IGEN logo as a PCB with an embedded NFC coil"
+>
+  A side quest: the IGEN logo rebuilt as a PCB with an embedded NFC antenna. Half merch idea, half
+  pitch — the shop could hand these out as tap-to-visit keepsakes that link straight to project
+  pages. I would love to see this adopted in the IGEN space for real.
+</Figure>
 
 ### PCB business card
 
-<figure>
-  <img
-    src="/media/projects/haven-shop-assistant/custom_pcb_card.png"
-    alt="Custom PCB NFC business card"
-  />
-  <figcaption>
-    A custom PCB designed as a business card with an embedded NFC tag. Tap it to open the project
-    page directly: no typing, no QR code squinting.
-  </figcaption>
-</figure>
+<Figure src={customPcbCard} alt="Custom PCB NFC business card">
+  A custom PCB designed as a business card with an embedded NFC tag. Tap it to open the project
+  page directly: no typing, no QR code squinting.
+</Figure>
 
 ---
 
 ## Admin interface
 
-<figure>
-  <img
-    src="/media/projects/haven-shop-assistant/demo_admin_ui_manual_control.png"
-    alt="Admin UI manual control panel"
-  />
-  <figcaption>
-    Admin control panel. Exposes homing, manual cake rotation, slot status inspection, macro
-    execution, and recovery workflows, all from a browser with no SSH required.
-  </figcaption>
-</figure>
+<Figure src={demoAdminUi} alt="Admin UI manual control panel">
+  Admin control panel. Exposes homing, manual cake rotation, slot status inspection, macro
+  execution, and recovery workflows, all from a browser with no SSH required.
+</Figure>
 
 ---
 

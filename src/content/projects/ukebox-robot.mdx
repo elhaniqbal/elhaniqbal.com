@@ -8,9 +8,13 @@ impact:
   - 'Completed a full design-build-present cycle from concept to physical prototype as part of UBC Integrated Engineering year two capstone.'
   - 'Presented the project via a formal poster session, communicating design rationale and constraints to peers and faculty.'
 stack: ['Mechanical Design', 'Prototyping', 'Engineering Design']
-heroImage: '/media/projects/ukebox-robot/ukebox_sample.PNG'
+heroImage: '../../assets/media/projects/ukebox-robot/ukebox_sample.webp'
 videoUrl: 'https://www.youtube-nocookie.com/embed/JwMDRXbq4SY'
 ---
+
+import Figure from '../../components/Figure.astro';
+import ukeboxSample from '../../assets/media/projects/ukebox-robot/ukebox_sample.webp';
+import ukeboxPoster from '../../assets/media/projects/ukebox-robot/ukebox_poster.webp';
 
 ## The project
 
@@ -20,24 +24,18 @@ The Ukebox was a second-year engineering design studio project built for IGEN 23
 
 Early design projects are valuable in a specific way: you do not know enough yet to be afraid of the problem. You just build the thing, find out what does not work, and fix it. In the end, I didn't really end up writing any complex algorithm to play songs (though we sure could with more time!), but learned more about electrical systems and buck converters and also scavenging old electronics to make things work.
 
-<figure>
-  <img
-    src="/media/projects/ukebox-robot/ukebox_sample.PNG"
-    alt="The Ukebox prototype — the ukulele-jukebox hybrid built for IGEN 230"
-  />
-  <figcaption>
-    The Ukebox itself: a jukebox form factor around a ukulele-based musical mechanism.
-  </figcaption>
-</figure>
+<Figure
+  src={ukeboxSample}
+  alt="The Ukebox prototype — the ukulele-jukebox hybrid built for IGEN 230"
+>
+  The Ukebox itself: a jukebox form factor around a ukulele-based musical mechanism.
+</Figure>
 
 ## Project poster
 
-<figure>
-  <img
-    src="/media/projects/ukebox-robot/ukebox_poster.png"
-    alt="The Ukebox project poster from the IGEN 230 poster session"
-  />
-  <figcaption>
-    The poster we presented at the IGEN 230 session — design rationale, constraints, and the final build.
-  </figcaption>
-</figure>
+<Figure
+  src={ukeboxPoster}
+  alt="The Ukebox project poster from the IGEN 230 poster session"
+>
+  The poster we presented at the IGEN 230 session — design rationale, constraints, and the final build.
+</Figure>
