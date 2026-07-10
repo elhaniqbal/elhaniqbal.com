@@ -33,6 +33,24 @@ async function setTheme(page: import('@playwright/test').Page, theme: 'light' | 
   await page.addInitScript((t: string) => localStorage.setItem('theme', t), theme);
 }
 
+/**
+ * Wait for every eager image to finish loading and decoding. Screenshots
+ * taken mid-decode capture a page without the image's final height, which
+ * makes fullPage baselines flaky.
+ */
+async function waitForImages(page: import('@playwright/test').Page) {
+  await page.evaluate(() =>
+    Promise.all(
+      Array.from(document.querySelectorAll('img'))
+        .filter((img) => img.loading !== 'lazy')
+        .map((img) => (img.complete ? img.decode().catch(() => {}) : new Promise((resolve) => {
+          img.addEventListener('load', () => img.decode().then(resolve, resolve), { once: true });
+          img.addEventListener('error', resolve, { once: true });
+        }))),
+    ),
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Homepage — light + dark
 // ---------------------------------------------------------------------------
@@ -40,6 +58,7 @@ async function setTheme(page: import('@playwright/test').Page, theme: 'light' | 
 test('visual: homepage (light)', async ({ page }) => {
   await setTheme(page, 'light');
   await page.goto('/');
+  await waitForImages(page);
   await expect(page).toHaveScreenshot('homepage-light.png', {
     ...SCREENSHOT_OPTS,
     mask: [page.locator('.terminal')],
@@ -49,6 +68,7 @@ test('visual: homepage (light)', async ({ page }) => {
 test('visual: homepage (dark)', async ({ page }) => {
   await setTheme(page, 'dark');
   await page.goto('/');
+  await waitForImages(page);
   await expect(page).toHaveScreenshot('homepage-dark.png', {
     ...SCREENSHOT_OPTS,
     mask: [page.locator('.terminal')],
@@ -62,18 +82,21 @@ test('visual: homepage (dark)', async ({ page }) => {
 test('visual: projects index', async ({ page }) => {
   await setTheme(page, 'light');
   await page.goto('/projects');
+  await waitForImages(page);
   await expect(page).toHaveScreenshot('projects.png', SCREENSHOT_OPTS);
 });
 
 test('visual: blog index', async ({ page }) => {
   await setTheme(page, 'light');
   await page.goto('/blog');
+  await waitForImages(page);
   await expect(page).toHaveScreenshot('blog.png', SCREENSHOT_OPTS);
 });
 
 test('visual: CogniShield project page', async ({ page }) => {
   await setTheme(page, 'light');
   await page.goto('/projects/cognishield');
+  await waitForImages(page);
   await expect(page).toHaveScreenshot('project-cognishield.png', SCREENSHOT_OPTS);
 });
 
@@ -85,6 +108,7 @@ test('visual: homepage (mobile)', async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await setTheme(page, 'light');
   await page.goto('/');
+  await waitForImages(page);
   await expect(page).toHaveScreenshot('homepage-mobile.png', {
     ...SCREENSHOT_OPTS,
     mask: [page.locator('.terminal')],

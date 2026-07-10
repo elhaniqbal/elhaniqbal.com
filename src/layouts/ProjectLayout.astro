@@ -1,7 +1,11 @@
 ---
+import { Image } from 'astro:assets';
 import BaseLayout from './BaseLayout.astro';
 const { frontmatter } = Astro.props;
 const isOngoing = frontmatter.status.toLowerCase().includes('ongoing');
+const heroWidths = frontmatter.heroImage
+  ? [640, 960, 1280, 1600].filter((w: number) => w < frontmatter.heroImage.width).concat(frontmatter.heroImage.width)
+  : [];
 ---
 <BaseLayout title={`${frontmatter.title} - Elhan Iqbal`} description={frontmatter.subtitle}>
   <article class="case-study container">
@@ -22,7 +26,16 @@ const isOngoing = frontmatter.status.toLowerCase().includes('ongoing');
 
     {frontmatter.heroImage && !frontmatter.videoUrl && (
       <div class="hero-image">
-        <img src={frontmatter.heroImage} alt={`${frontmatter.title} preview`} loading="lazy" />
+        <Image
+          src={frontmatter.heroImage}
+          alt={`${frontmatter.title} preview`}
+          widths={heroWidths}
+          sizes="(max-width: 1100px) 100vw, 1040px"
+          format="avif"
+          quality={80}
+          loading="eager"
+          fetchpriority="high"
+        />
       </div>
     )}
 

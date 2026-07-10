@@ -3,7 +3,7 @@ export const site = {
   role: 'Software / Infrastructure Engineer',
   location: 'Vancouver, Canada',
   pitch:
-    'My portfolio and blog focused on some of my projects and engineering blogs.',
+    'Software and infrastructure engineer in Vancouver. Projects, experiments, and engineering notes.',
   email: 'contact@elhaniqbal.com',
   github: 'https://github.com/elhaniqbal',
   linkedin: 'https://www.linkedin.com/in/elhan-iqbal/',

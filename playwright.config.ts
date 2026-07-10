@@ -9,7 +9,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // CI runners have 2 vCPUs; two workers roughly halves test wall time
+  // against the static preview server without starving the browser.
+  workers: process.env.CI ? 2 : undefined,
   reporter: 'list',
   use: {
     // Port 4322, not 4321: the dev server defaults to 4321, and with
@@ -37,6 +39,8 @@ export default defineConfig({
     command: 'npm run build && npm run preview -- --port 4322',
     url: 'http://localhost:4322',
     reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
+    // The build encodes ~100 responsive AVIF variants; on CI's 2-core runners
+    // that alone can take several minutes, so 180s starves the webServer.
+    timeout: 600_000,
   },
 });

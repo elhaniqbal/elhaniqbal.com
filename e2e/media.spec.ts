@@ -1,15 +1,19 @@
 /**
  * Media asset tests.
  *
- * Automatically discovers every real file under public/media/ and verifies:
- *   1. The file is served at its expected URL (HTTP 200).
- *   2. The file is actually referenced by at least one page in the site
- *      (orphaned assets are caught immediately).
+ * Media lives in src/assets/media and is served through the astro:assets
+ * pipeline (hashed /_astro/ URLs), so the tests verify:
+ *   1. Every file in src/assets/media is referenced by at least one source
+ *      file (orphaned assets are caught immediately).
+ *   2. Every <img> URL rendered on any page (src and srcset) returns HTTP 200.
+ *   3. No page references the retired /media/ public directory.
  *
- * Adding a new file to public/media/ adds it to both checks with zero test changes.
+ * Adding a new file to src/assets/media adds it to the orphan check, and any
+ * page that renders it adds its URLs to the 200 check -- zero test changes.
  */
+import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
-import { blogSlugs, projectSlugs, publicMediaFiles } from './fixtures';
+import { assetMediaFiles, blogSlugs, projectSlugs, sourceFiles } from './fixtures';
 
 const ALL_PAGES = [
   '/',
@@ -21,49 +25,73 @@ const ALL_PAGES = [
 ];
 
 // ---------------------------------------------------------------------------
-// 1. Every media file is served with HTTP 200
-// ---------------------------------------------------------------------------
-
-test('all public/media files return 200', async ({ page }) => {
-  if (publicMediaFiles.length === 0) return; // nothing to check yet
-
-  for (const mediaPath of publicMediaFiles) {
-    const res = await page.request.get(mediaPath);
-    expect.soft(res.status(), mediaPath).toBe(200);
-  }
-});
-
-// ---------------------------------------------------------------------------
-// 2. Every media file is referenced somewhere in the site
+// 1. Every asset file is referenced by at least one source file
 //    (catches orphaned assets that exist on disk but aren't used anywhere)
 // ---------------------------------------------------------------------------
 
-test('all public/media files are referenced by at least one page', async ({ page }) => {
-  if (publicMediaFiles.length === 0) return;
+test('all src/assets/media files are referenced by at least one source file', () => {
+  if (assetMediaFiles.length === 0) return;
 
-  // Crawl every page and collect all attribute values that start with /media/
-  const referenced = new Set<string>();
-  const checkAttrs = ['src', 'href', 'poster', 'data-src'];
+  const allSource = sourceFiles.map((f) => readFileSync(f, 'utf8')).join('\n');
+  const orphaned = assetMediaFiles.filter((f) => !allSource.includes(f));
+  expect(
+    orphaned,
+    `These files exist in src/assets/media but are not referenced by any source file:\n${orphaned.join('\n')}`,
+  ).toEqual([]);
+});
+
+// ---------------------------------------------------------------------------
+// 2. Every rendered image URL (src + srcset) returns HTTP 200,
+//    and no page still points at the retired /media/ directory
+// ---------------------------------------------------------------------------
+
+test('all rendered image URLs return 200 and /media/ is gone', async ({ page }) => {
+  // ~130 URLs across all pages; sequential fetches can blow the 30s default.
+  test.setTimeout(120_000);
+  const imageUrls = new Set<string>();
+  const legacyRefs: string[] = [];
 
   for (const pagePath of ALL_PAGES) {
     // domcontentloaded: this test only reads attributes from the DOM, so
-    // there's no need to wait for images/fonts/embeds on all ~11 pages —
-    // with the default 'load' the crawl exceeds the 30s test timeout.
+    // there's no need to wait for images/fonts/embeds on all ~11 pages.
     await page.goto(pagePath, { waitUntil: 'domcontentloaded' });
 
-    const refs: string[] = await page.evaluate((attrs: string[]) => {
-      return attrs.flatMap((attr) =>
-        Array.from(document.querySelectorAll<Element>(`[${attr}]`))
-          .map((el) => el.getAttribute(attr) ?? ''),
-      ).filter((s) => s.startsWith('/media/'));
-    }, checkAttrs);
+    const { urls, legacy } = await page.evaluate(() => {
+      const urls: string[] = [];
+      const legacy: string[] = [];
+      for (const img of Array.from(document.querySelectorAll('img'))) {
+        const src = img.getAttribute('src') ?? '';
+        if (src) urls.push(src);
+        const srcset = img.getAttribute('srcset') ?? '';
+        for (const candidate of srcset.split(',')) {
+          const url = candidate.trim().split(/\s+/)[0];
+          if (url) urls.push(url);
+        }
+      }
+      for (const el of Array.from(document.querySelectorAll('[src], [href], [poster]'))) {
+        for (const attr of ['src', 'href', 'poster']) {
+          const v = el.getAttribute(attr);
+          if (v && v.startsWith('/media/')) legacy.push(v);
+        }
+      }
+      return { urls, legacy };
+    });
 
-    refs.forEach((r) => referenced.add(r));
+    urls.filter((u) => u.startsWith('/')).forEach((u) => imageUrls.add(u));
+    legacyRefs.push(...legacy.map((l) => `${pagePath}: ${l}`));
   }
 
-  const orphaned = publicMediaFiles.filter((f) => !referenced.has(f));
-  expect(
-    orphaned,
-    `These files exist in public/media but are not referenced by any page:\n${orphaned.join('\n')}`,
-  ).toEqual([]);
+  expect(legacyRefs, `Pages still reference /media/:\n${legacyRefs.join('\n')}`).toEqual([]);
+  expect(imageUrls.size, 'expected at least one rendered image across the site').toBeGreaterThan(0);
+
+  const urls = [...imageUrls];
+  const BATCH = 16;
+  for (let i = 0; i < urls.length; i += BATCH) {
+    const results = await Promise.all(
+      urls.slice(i, i + BATCH).map(async (url) => ({ url, status: (await page.request.get(url)).status() })),
+    );
+    for (const { url, status } of results) {
+      expect.soft(status, url).toBe(200);
+    }
+  }
 });

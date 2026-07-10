@@ -9,7 +9,7 @@ impact:
   - 'Went from schematic to KiCad layout to fabrication-ready Gerbers to the actual physical card entirely self-taught, learning PCB design conventions along the way.'
   - 'The card doubles as a functional contact card — tap it and your phone gets a URL redirect, the LEDs blink, and suddenly handing someone your contact info is actually memorable.'
 stack: ['KiCAD', 'PCB Design', 'NFC', 'Electronics']
-heroImage: '/media/projects/pcb-business-card/card-pcb-render.png'
+heroImage: '../../assets/media/projects/pcb-business-card/card-pcb-render.webp'
 ---
 
 ## Why a PCB business card
@@ -32,7 +32,7 @@ So when you hold your phone to the card:
 
 The schematic is simple: NT3H2111 with its `ANT_LA`/`ANT_LB` antenna pads, a 220 nF decoupling cap on `VCC`, and three LED+resistor pairs hanging off `VOUT` to ground. Each LED gets a 3.3 kΩ resistor to limit current within the VOUT rail's supply capability. The I²C lines (SCL, SDA) and field detect (FD) pin are broken out but not populated — they would be useful if I wanted to add a microcontroller later, but for a passive card they sit unused.
 
-![PCB schematic showing the NT3H2111 NFC chip, three LEDs with 3.3k resistors, and 220nF decoupling capacitor](/media/projects/pcb-business-card/card-pcb-schematic.png)
+![PCB schematic showing the NT3H2111 NFC chip, three LEDs with 3.3k resistors, and 220nF decoupling capacitor](../../assets/media/projects/pcb-business-card/card-pcb-schematic.webp)
 
 ## Design decisions
 
@@ -42,7 +42,7 @@ The board color is dark green on render but in real life it's black, which is cl
 
 One thing I deliberately kept off the board: a USB port or any active power circuit. Keeping it fully passive means nothing to charge, nothing to break, nothing to explain. The card works or it does not, and whether it works depends entirely on the antenna and chip, both of which are either soldered correctly or not.
 
-![3D render of the finished PCB business card in dark green with NFC symbol and contact details](/media/projects/pcb-business-card/card-pcb-render.png)
+![3D render of the finished PCB business card in dark green with NFC symbol and contact details](../../assets/media/projects/pcb-business-card/card-pcb-render.webp)
 
 ## What I actually learned
 
