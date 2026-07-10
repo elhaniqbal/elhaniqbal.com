@@ -46,6 +46,8 @@ test('all src/assets/media files are referenced by at least one source file', ()
 // ---------------------------------------------------------------------------
 
 test('all rendered image URLs return 200 and /media/ is gone', async ({ page }) => {
+  // ~130 URLs across all pages; sequential fetches can blow the 30s default.
+  test.setTimeout(120_000);
   const imageUrls = new Set<string>();
   const legacyRefs: string[] = [];
 
@@ -82,8 +84,14 @@ test('all rendered image URLs return 200 and /media/ is gone', async ({ page }) 
   expect(legacyRefs, `Pages still reference /media/:\n${legacyRefs.join('\n')}`).toEqual([]);
   expect(imageUrls.size, 'expected at least one rendered image across the site').toBeGreaterThan(0);
 
-  for (const url of imageUrls) {
-    const res = await page.request.get(url);
-    expect.soft(res.status(), url).toBe(200);
+  const urls = [...imageUrls];
+  const BATCH = 16;
+  for (let i = 0; i < urls.length; i += BATCH) {
+    const results = await Promise.all(
+      urls.slice(i, i + BATCH).map(async (url) => ({ url, status: (await page.request.get(url)).status() })),
+    );
+    for (const { url, status } of results) {
+      expect.soft(status, url).toBe(200);
+    }
   }
 });

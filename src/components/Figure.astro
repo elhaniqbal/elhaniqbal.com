@@ -15,14 +15,17 @@ const widths = [480, 800, 1080, 1440].filter((w) => w < src.width);
 widths.push(src.width);
 ---
 <figure>
-  <Image
-    src={src}
-    alt={alt}
-    widths={widths}
-    sizes="(max-width: 768px) 100vw, 720px"
-    format="avif"
-    loading="lazy"
-  />
+  <a href={src.src} target="_blank" rel="noopener">
+    <Image
+      src={src}
+      alt={alt}
+      widths={widths}
+      sizes="(max-width: 768px) 100vw, 720px"
+      format="avif"
+      quality={80}
+      loading="lazy"
+    />
+  </a>
   {Astro.slots.has('default') && (
     <figcaption><slot /></figcaption>
   )}
