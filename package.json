@@ -19,7 +19,7 @@
     "@astrojs/mdx": "^6.0.1",
     "astro": "^6.4.3",
     "astro-expressive-code": "^0.43.1",
-    "sharp": "^0.34.5"
+    "sharp": "^0.35.3"
   },
   "devDependencies": {
     "@astrojs/sitemap": "^3.7.3",
