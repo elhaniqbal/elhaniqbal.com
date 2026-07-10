@@ -37,6 +37,8 @@ export default defineConfig({
     command: 'npm run build && npm run preview -- --port 4322',
     url: 'http://localhost:4322',
     reuseExistingServer: !process.env.CI,
-    timeout: 180_000,
+    // The build encodes ~100 responsive AVIF variants; on CI's 2-core runners
+    // that alone can take several minutes, so 180s starves the webServer.
+    timeout: 600_000,
   },
 });

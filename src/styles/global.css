@@ -821,6 +821,7 @@ main {
 
 .hero-image img {
   width: 100%;
+  height: auto;
   display: block;
 }
 
@@ -1036,6 +1037,9 @@ main {
 .prose img,
 .prose video {
   max-width: 100%;
+  /* Optimized images carry explicit width/height attributes; without
+     height:auto the height attribute pins the box and distorts the image. */
+  height: auto;
   border-radius: var(--r-lg);
   border: 1px solid var(--border);
   display: block;
@@ -1053,6 +1057,7 @@ main {
 
 .prose figure img {
   width: 100%;
+  height: auto;
   margin-block: 0;
 }
 

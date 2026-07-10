@@ -24,14 +24,6 @@ const SCREENSHOT_OPTS = {
   animations: 'disabled' as const,
 };
 
-// The homepage terminal widget types lines with JS timers, which changes its
-// height (and shifts everything below it) depending on when the screenshot
-// lands. The widget already respects prefers-reduced-motion, so emulating it
-// keeps the layout deterministic.
-test.beforeEach(async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-});
-
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
