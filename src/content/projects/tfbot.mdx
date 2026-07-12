@@ -1,0 +1,105 @@
+---
+title: 'tfbot'
+subtitle: 'Convention-aware Terraform change automation — a self-hosted bot that turns a plain-English infra request into a convention-perfect, ready-to-review pull request. The model proposes a validated intermediate representation; deterministic Go performs the edits.'
+date: '2026'
+status: 'Personal project · ongoing'
+featured: true
+impact:
+  - 'Organized around one bet — the LLM proposes, deterministic Go performs. The model only ever emits a small, schema-validated IR; an hclwrite engine turns that into surgical AST edits, so existing comments, ordering, and hand-tweaks stay byte-for-byte intact.'
+  - 'A zero-LLM, offline scanner reads a Terraform repo and drafts a recipe.yaml of its conventions — module-vs-raw, file placement, naming scheme, shared defaults — so one generic executor can treat new resource types as data instead of new code.'
+  - 'Deterministic gates (fmt, AST-diff scope, naming, terraform validate) sit between exactly two AI steps — an extractor and a faithfulness judge — and are reachable three ways: a CLI, a local web UI, and a GitHub webhook where a "/tfbot <request>" comment comes back as a pull request.'
+stack: ['Go', 'Terraform / HCL', 'hclwrite AST', 'Anthropic Claude API', 'JSON Schema', 'GitHub webhooks', 'Atlantis / CI', 'QLoRA fine-tune (WIP)']
+heroImage: '../../assets/media/projects/tfbot/tfbot-hero.webp'
+---
+
+import Figure from '../../components/Figure.astro';
+import scan from '../../assets/media/projects/tfbot/tfbot-scan.webp';
+import gcs from '../../assets/media/projects/tfbot/tfbot-hero-gcs.webp';
+import demo from '../../assets/media/projects/tfbot/tfbot-demo.webp';
+
+## Where this came from
+
+A lot of my infra change during my Samsung co-op followed the same tiny liturgy: grab a JIRA ticket, open the Terraform repo, hunt down the file where that kind of resource *usually* lives, copy the block above it, change five values, match the naming scheme from memory, open a PR, wait for Atlantis to plan, notice I fat-fingered one label, push again, wait again.
+
+None of it was too hard. All of it was rote. It was the software-engineering equivalent of hand-copying a recipe because the cookbook is chained to the desk — and I kept thinking a small, very stubborn robot could do the copying while I kept the only part that needs a brain: the review.
+
+tfbot (working name; it changes with my mood) is that robot.
+
+## What it does
+
+You give it a sentence or a JIRA ticket (lol). It gives you back a pull request.
+
+> "need an S3 bucket for the monthly compliance reports, this is for prod"
+
+That turns into a branch with a convention-perfect Terraform block, four gates green, a `terraform plan` running async in CI, and the reasoning stapled to the PR description. You review it and merge — or tell it it's wrong, which is a first-class outcome, not an error.
+
+Here it is doing the whole loop, live and unedited:
+
+<figure>
+  <a href={demo.src} target="_blank" rel="noopener">
+    <img
+      src={demo.src}
+      alt="tfbot turning a plain-English request into an extracted IR, four passing gates, a Terraform diff, and a faithfulness-judge verdict"
+      width={demo.width}
+      height={demo.height}
+      loading="lazy"
+    />
+  </a>
+  <figcaption>One sentence in; extracted IR, gate results, the diff, and a faithfulness verdict out. No HCL is written by a language model at any point in that clip — which is the entire trick.</figcaption>
+</figure>
+
+## The one rule everything else hangs off
+
+**The LLM proposes; deterministic code performs.**
+
+The model is never allowed to write HCL. Letting a language model freehand your infrastructure files is how you get a bucket that's 90% right and 100% unreviewable. Instead, the only thing that crosses the AI boundary is a small, schema-validated *intermediate representation* — a structured "here is what I think you asked for":
+
+```yaml
+action: add
+resource_type: s3_bucket
+params:
+  env: prod
+  purpose: compliance
+confidence: high
+```
+
+A Go engine takes that IR and makes the edit surgically, on the syntax tree, with hclwrite. It never regenerates a file from a template. Your existing comments, your slightly cursed block ordering, that one hand-aligned column you're irrationally proud of — all of it survives byte-for-byte. (There is a test literally named `TestApplyAddPreservesExistingBytes`, because I trust myself about as far as I can throw a Terraform state file.)
+
+## Conventions are data, not code
+
+Every Terraform repo has a house style: whether buckets are raw resources or a module, which file they live in, how things get named, which defaults everyone copies without thinking. tfbot learns all of that *before* any AI shows up. A zero-LLM, offline scanner reads the repo and drafts a `recipe.yaml` — the conventions written down as data, ratified once by a human:
+
+<Figure src={scan} alt="tfbot scan output: an inferred conventions table and a drafted recipe.yaml for a Google Cloud Storage module repo">
+  `tfbot scan .` on a GCS repo — one command, about a second, no network. It infers the module source, target file, naming scheme, and shared defaults, then hands you a draft `recipe.yaml` to sign off on. Placeholders like `{part1}` stay deliberately dumb; naming things is the one job it refuses to guess at.
+</Figure>
+
+That recipe drives a single generic executor. Adding support for a new resource type is a new recipe entry, not a new `if` branch — so the interesting engineering lives in the inference, not in an ever-growing switch statement I would eventually learn to hate.
+
+## Two AI steps, and a wall of boring checks between them
+
+The whole pipeline gives a model a say in exactly two places: extraction at the start (sentence → IR) and one faithfulness judge at the very end (does this diff actually match what was asked?). Everything in between is deterministic gates that cannot be sweet-talked:
+
+- **fmt** — is every edited file canonically formatted?
+- **ast-diff** — did *only* the addresses we planned to touch change? (This one hard-fails the run if the model colored outside the lines.)
+- **naming** — does the new block match the repo's scheme?
+- **terraform validate** — does it actually validate?
+
+And when a gate can't run — no terraform binary, uninitialized workspace — it returns **Skip with a reason**, never a fake pass. Gates degrade honestly or not at all, so the synchronous path works fully offline. The judge can veto; it can never edit. No agents grading agents, no vibes, no "looks good to me 🤖".
+
+My favorite part is what it does when you're vague. Ask for *"another bucket like the analytics one"* and it doesn't guess — it asks you a few questions and touches nothing. Refusing to make something up was a feature I had to build on purpose, and it's the one I'd defend hardest.
+
+## Same engine, any cloud
+
+Because provider knowledge is *consumed* (`terraform providers schema -json`) rather than hand-coded, going from AWS to GCP to whatever-comes-next is mostly free. Same request flow, same gates, a different module block falling out the bottom:
+
+<Figure src={gcs} alt="tfbot fulfilling a Google Cloud Storage bucket request: extracted IR, a module-block diff, and gates including terraform-validate honestly reporting Skip">
+  The same sentence-to-diff flow against a GCS repo — a module block instead of a raw resource, and `terraform-validate` honestly reporting **Skip** because the workspace isn't initialized. The real plan runs async in CI, where it belongs.
+</Figure>
+
+## What it is, and where it's going
+
+Right now it hangs together as a vertical slice — a CLI, a local web UI, and a GitHub webhook where a `/tfbot <request>` comment on an issue comes back as a pull request. It's honestly still a workbench more than a product: I'm poking at it in the open, mostly to find out which of my assumptions actually survive contact with a real repo. Human review and Atlantis apply stay exactly where they already are — the aim was never to take people out of the loop, only the tedium.
+
+The part I'm most curious about is still ahead of me: whether a small, self-hosted model can handle the extraction step about as well as a frontier one — because *self-hosted, and your repo stays yours* is the pitch that actually matters, and cost is just the bonus. That might mean renting a GPU for an afternoon to fine-tune something with QLoRA, or it might just mean pointing a good open-source model at the IR schema with grammar-constrained decoding and seeing how far honest prompting gets on its own. Either way there's a benchmark waiting at the end — and I'd rather publish the one where the small model loses a couple than the one that's secretly just a screenshot.
+
+The nice part is the deterministic half doesn't care which model wins that experiment: the gates, the AST surgery, the recipe all stay exactly the same. The model is the one swappable piece, which is precisely where I want the uncertainty to live. For now it already does the boring 90% and leaves me the 10% worth doing — and back when that boring 90% *was* the whole Tuesday, that's a trade I'll take.
