@@ -5,9 +5,9 @@ date: '2026'
 status: 'Personal project · ongoing'
 featured: true
 impact:
-  - 'Built a complete dependency-scoring pipeline — PII redaction, six-axis signal extraction, size-adaptive gist compression, and archetype-sphere gating — without a single LLM call at inference time.'
-  - 'Adapted the midpoint-radius n-sphere formula from RAG retrieval research (US Patent 12,579,200 B1) as a selective-prediction gate: transcripts that fall clearly inside one region are auto-labeled; ambiguous cases escalate to human review.'
-  - 'Implemented a confidence-aware archetype classifier covering six behavioral patterns (Pure Vibe Coder, Real Engineer, Skill Atrophy, Oversharing, Smart Amplify, Hallucination Accepter) with a single α knob controlling risk/coverage tradeoff.'
+  - 'A dependency-scoring pipeline that runs end to end without a single LLM call at inference time — PII redaction, six-axis signal extraction, size-adaptive gist compression, and archetype-sphere gating.'
+  - 'Adapts the midpoint-radius n-sphere formula from RAG retrieval research (US Patent 12,579,200 B1) into a selective-prediction gate: transcripts that land clearly inside one region get auto-labeled; ambiguous ones escalate to a human.'
+  - 'A confidence-aware archetype classifier over six behavioral patterns (Pure Vibe Coder, Real Engineer, Skill Atrophy, Oversharing, Smart Amplify, Hallucination Accepter), with a single α knob trading coverage against risk.'
 stack: ['Python', 'NumPy', 'scikit-learn', 'Streamlit', 'Matplotlib', 'sentence-transformers', 'Presidio', 'lmppl']
 heroImage: '../../assets/media/projects/cognishield/cognishield-sneak-peek.webp'
 ---
@@ -20,7 +20,7 @@ The question I wanted to answer: can you automatically detect which pattern is h
 
 ## What Vibe Check does
 
-Vibe Check is a scoring tool for programmer–AI chat transcripts. You paste or load a conversation, and it extracts a set of behavioral signals without any LLM call at inference time. Those signals feed into an archetype classifier that either auto-labels the transcript or routes it to a human if the case is ambiguous.
+Vibe Check is a scoring tool for programmer–AI chat transcripts — and yes, I'm fully aware of the irony of prototyping an AI-dependency detector while leaning on AI to prototype it. You paste or load a conversation, and it extracts a set of behavioral signals without any LLM call at inference time. Those signals feed into an archetype classifier that either auto-labels the transcript or routes it to a human when the case is ambiguous. It's still an experiment more than a verdict machine — the real question is whether cheap, transparent signals can stand in for an expensive opaque one, and so far that bet is holding up better than I expected.
 
 The output is a dependency score (0 to 1) and an archetype label with a confidence bound:
 
@@ -110,7 +110,7 @@ presidio-analyzer + spacy → optional (NER-based PII vs. regex-only)
 
 First run synthesizes labeled examples for all six archetypes, extracts signal vectors, and computes centroids that become the anchor points. These cache to `anchors.json` and reload without re-synthesis. The geometry is not hand-tuned: the anchor positions come from the same signal extractor that runs at inference time, so they live in the same space.
 
-Leave-one-out evaluation on the bundled synthetic data runs at high accuracy. Real-world transcripts will escalate more frequently, which is the correct behavior: the system is supposed to route ambiguous cases out rather than guess.
+Leave-one-out evaluation on the bundled synthetic data scores well — though that is the geometry grading homework it also wrote, so I hold the number loosely. Real-world transcripts will escalate more often, which is exactly the point: the system is supposed to route ambiguous cases out rather than guess. If it ever escalates *everything*, that is a signal too — just a less flattering one.
 
 ## UI
 
@@ -123,4 +123,4 @@ The Streamlit interface has four tabs:
 
 ## What is next
 
-Extending the signal extraction to handle longer multi-session transcripts from LMSYS/ShareGPT. Adding a validated ground-truth dataset with real labeled examples from consenting participants. Publishing the anchor calibration methodology so others can use it with their own labeled data. The n-sphere gating geometry is general enough to handle more than six archetypes with minimal changes.
+Extending the signal extraction to handle longer multi-session transcripts from LMSYS/ShareGPT. Adding a validated ground-truth dataset with real labeled examples from consenting participants. Publishing the anchor calibration methodology so others can use it with their own labeled data. The n-sphere gating geometry is general enough to handle more than six archetypes with minimal changes — but the honest next milestone is simpler than any of that: finding out whether real humans land in these regions as cleanly as synthetic ones do. If they don't, that's the most interesting result the project could hand me, and I'd rather chase that than a prettier accuracy number.

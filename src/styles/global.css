@@ -265,6 +265,35 @@ main {
   pointer-events: none;
 }
 
+/* Mobile-only controls, revealed in the 768px media query below */
+.menu-btn {
+  display: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-sm);
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  transition: color 0.12s, background 0.12s, border-color 0.12s;
+  margin-left: 0.375rem;
+  flex-shrink: 0;
+}
+
+.menu-btn:hover {
+  color: var(--text);
+  background: var(--bg-2);
+  border-color: var(--border-2);
+}
+
+.menu-btn svg {
+  pointer-events: none;
+}
+
+.nav-link-resume {
+  display: none;
+}
+
 /* ─── Footer ─────────────────────────────── */
 
 .site-footer {
@@ -1331,8 +1360,49 @@ main {
 /* ─── Responsive ─────────────────────────── */
 
 @media (max-width: 768px) {
-  .nav-link { display: none; }
   .nav-contact { display: none; }
+  .menu-btn { display: grid; }
+
+  /* Nav collapses into a dropdown panel under the sticky header,
+     toggled by the hamburger button (see BaseLayout.astro). */
+  .nav {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.125rem;
+    padding: 0.625rem 1.5rem 0.875rem;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav.open { display: flex; }
+
+  .nav-link {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.9375rem;
+  }
+
+  /* Resume stands out as a filled pill, mirroring the desktop .nav-contact
+     button (which is hidden at this width). */
+  .nav-link-resume {
+    display: block;
+    margin-top: 0.5rem;
+    border-radius: 999px;
+    background: var(--text);
+    color: var(--bg);
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .nav-link-resume:hover {
+    background: var(--text);
+    color: var(--bg);
+    opacity: 0.85;
+  }
 
   .blog-entry {
     flex-direction: column;

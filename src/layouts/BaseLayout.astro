@@ -13,6 +13,7 @@ const {
 } = Astro.props;
 
 const path = Astro.url.pathname;
+const year = new Date().getFullYear();
 ---
 <!doctype html>
 <html lang="en">
@@ -49,13 +50,16 @@ const path = Astro.url.pathname;
           <span>{site.name}</span>
         </a>
         <div class="header-right">
-          <nav class="nav" aria-label="Main navigation">
+          <nav class="nav" id="site-nav" aria-label="Main navigation">
             <a class="nav-link" href="/projects" aria-current={path.startsWith('/projects') ? 'page' : undefined}>Projects</a>
             <a class="nav-link" href="/blog" aria-current={path.startsWith('/blog') ? 'page' : undefined}>Blog</a>
             <a class="nav-link" href="/contact" aria-current={path === '/contact' ? 'page' : undefined}>Contact</a>
+            <!-- Mobile only: duplicates the Resume pill, which is hidden below 768px -->
+            <a class="nav-link nav-link-resume" href={site.resume} target="_blank" rel="noopener">Resume</a>
           </nav>
           <a class="nav-contact" href={site.resume} target="_blank" rel="noopener">Resume</a>
           <button class="theme-btn" id="theme-toggle" aria-label="Toggle color scheme" type="button"></button>
+          <button class="menu-btn" id="menu-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="site-nav" type="button"></button>
         </div>
       </div>
     </header>
@@ -66,12 +70,11 @@ const path = Astro.url.pathname;
 
     <footer class="site-footer">
       <div class="container footer-inner">
-        <span>{site.name} · {site.role}</span>
+        <span>© {year} {site.name}. All rights reserved.</span>
         <div class="footer-links">
           <a href="/contact">Contact</a>
           <a href={site.github} target="_blank" rel="noopener noreferrer">GitHub</a>
           <a href={site.linkedin} target="_blank" rel="noopener noreferrer">LinkedIn</a>
-          <a href={`mailto:${site.email}`}>Email</a>
           <a href={site.resume}>Resume</a>
         </div>
       </div>
@@ -101,6 +104,38 @@ const path = Astro.url.pathname;
             localStorage.setItem('theme', next);
             document.documentElement.dataset.theme = next;
             syncBtn();
+          });
+        }
+
+        // Mobile menu toggle
+        var MENU = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M3 6h18M3 12h18M3 18h18"/></svg>';
+        var CLOSE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+
+        // const (not var) so TypeScript keeps the null-narrowing from the
+        // `if (menuBtn && nav)` guard alive inside the event-listener closures.
+        const menuBtn = document.getElementById('menu-toggle');
+        const nav = document.getElementById('site-nav');
+
+        function setMenu(open: boolean) {
+          if (!menuBtn || !nav) return;
+          nav.classList.toggle('open', open);
+          menuBtn.innerHTML = open ? CLOSE : MENU;
+          menuBtn.setAttribute('aria-expanded', String(open));
+          menuBtn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+        }
+
+        if (menuBtn && nav) {
+          setMenu(false);
+          menuBtn.addEventListener('click', function () {
+            setMenu(!nav.classList.contains('open'));
+          });
+          document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') setMenu(false);
+          });
+          // Pages load fully on navigation, but close eagerly so the menu
+          // doesn't linger over the old page while the next one loads.
+          nav.addEventListener('click', function (e) {
+            if (e.target instanceof HTMLAnchorElement) setMenu(false);
           });
         }
       })();
