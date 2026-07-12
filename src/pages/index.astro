@@ -4,12 +4,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import ProjectCard from '../components/ProjectCard.astro';
 import BlogCard from '../components/BlogCard.astro';
 import { site } from '../site.config';
+import { sortProjects } from '../lib/projects';
 
-const allProjects = (await getCollection('projects')).sort((a, b) => {
-  if (a.data.featured && !b.data.featured) return -1;
-  if (!a.data.featured && b.data.featured) return 1;
-  return a.data.date < b.data.date ? 1 : -1;
-});
+const allProjects = sortProjects(await getCollection('projects'));
 const showcased = allProjects.slice(0, 3);
 
 const recentPosts = (await getCollection('blog'))
@@ -310,10 +307,10 @@ const recentPosts = (await getCollection('blog'))
 
   // Tuning constants — adjust to taste
   const MAX_LINES = 22;   // oldest lines scroll off above this count
-  const CHAR_MS   = 40;   // ms per character typed (±~15 ms jitter added)
-  const CMD_PAUSE = 520;  // pause after a command finishes before output appears
-  const OUT_PAUSE = 110;  // pause between output lines
-  const LOOP_PAUSE = 2200; // pause at end before restarting
+  const CHAR_MS   = 55;   // ms per character typed (±~15 ms jitter added)
+  const CMD_PAUSE = 650;  // pause after a command finishes before output appears
+  const OUT_PAUSE = 160;  // pause between output lines
+  const LOOP_PAUSE = 2600; // pause at end before restarting
 
   function runTerminal(el: HTMLElement) {
     el.innerHTML = '';
@@ -325,12 +322,20 @@ const recentPosts = (await getCollection('blog'))
       while (el.children.length > MAX_LINES) el.firstElementChild!.remove();
     }
 
+    // Keep the newest line in view. On mobile the terminal has a fixed height
+    // and clips overflow, so without this the line being typed sits below the
+    // bottom edge until older lines scroll off. (No-op when content fits.)
+    function scrollToBottom() {
+      el.scrollTop = el.scrollHeight;
+    }
+
     function addLine(extraClass: string, content: string) {
       const div = document.createElement('div');
       div.className = 't-line' + (extraClass ? ' ' + extraClass : '');
       div.textContent = content;
       el.appendChild(div);
       trim();
+      scrollToBottom();
     }
 
     function next() {
@@ -345,6 +350,7 @@ const recentPosts = (await getCollection('blog'))
         sp.style.height = '0.25rem';
         el.appendChild(sp);
         trim();
+        scrollToBottom();
         setTimeout(next, 60);
         return;
       }
@@ -372,11 +378,13 @@ const recentPosts = (await getCollection('blog'))
       wrapper.appendChild(frag);
       el.appendChild(wrapper);
       trim();
+      scrollToBottom();
 
       let ci = 0;
       (function typeChar() {
         if (ci < item.text.length) {
           typed.textContent += item.text[ci++];
+          scrollToBottom();
           setTimeout(typeChar, CHAR_MS + (Math.random() * 28 - 14));
         } else {
           cursor.remove();
