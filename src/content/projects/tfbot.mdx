@@ -8,7 +8,8 @@ impact:
   - 'Organized around one bet — the LLM proposes, deterministic Go performs. The model only ever emits a small, schema-validated IR; an hclwrite engine turns that into surgical AST edits, so existing comments, ordering, and hand-tweaks stay byte-for-byte intact.'
   - 'A zero-LLM, offline scanner reads a Terraform repo and drafts a recipe.yaml of its conventions — module-vs-raw, file placement, naming scheme, shared defaults — so one generic executor can treat new resource types as data instead of new code.'
   - 'Deterministic gates (fmt, AST-diff scope, naming, terraform validate) sit between exactly two AI steps — an extractor and a faithfulness judge — and are reachable three ways: a CLI, a local web UI, and a GitHub webhook where a "/tfbot <request>" comment comes back as a pull request.'
-stack: ['Go', 'Terraform / HCL', 'hclwrite AST', 'Anthropic Claude API', 'JSON Schema', 'GitHub webhooks', 'Atlantis / CI', 'QLoRA fine-tune (WIP)']
+  - 'Fine-tuned and benchmarked a self-hosted Qwen2.5-1.5B extractor against the frontier model, live, on real numbers — then found and fixed a genuine bug the benchmark surfaced: a 17:1 class imbalance in the synthetic training-data generator that was quietly teaching the small model to never ask a clarifying question.'
+stack: ['Go', 'Terraform / HCL', 'hclwrite AST', 'Anthropic Claude API', 'JSON Schema', 'GitHub webhooks', 'Atlantis / CI', 'QLoRA fine-tune (Qwen2.5-1.5B)', 'llama.cpp / GGUF']
 heroImage: '../../assets/media/projects/tfbot/tfbot-hero.webp'
 ---
 
@@ -96,10 +97,35 @@ Because provider knowledge is *consumed* (`terraform providers schema -json`) ra
   The same sentence-to-diff flow against a GCS repo — a module block instead of a raw resource, and `terraform-validate` honestly reporting **Skip** because the workspace isn't initialized. The real plan runs async in CI, where it belongs.
 </Figure>
 
+## The fine-tune, and the bug it found
+
+The question I left open above — whether a small, self-hosted model can handle extraction about as well as a frontier one — stopped being hypothetical. I fine-tuned Qwen2.5-1.5B-Instruct with QLoRA on a free Colab T4 (a few hundred fabricated repos' worth of gold-labeled requests, never the real fixtures — the point is teaching the *task*, not memorizing any one repo's resource names), quantized it to a ~1GB GGUF, and pointed the exact same pipeline at it via a local `llama-server` instead of the Claude API. Then I ran the real benchmark instead of a vibe check:
+
+| | frontier (Claude) | self-hosted (1.5B, fine-tuned) |
+| --- | --- | --- |
+| exact-match on held-out requests | 71.2% | 36.1% |
+| action / resource-type detection | 95.0% / 97.7% | 95.0% / 95.9% |
+| knows when to *ask* instead of guess | 0.79 | 0.33 |
+| never silently ships a wrong PR (adversarial corpus) | 22/30 | **28/30** |
+
+The gap is real, but it's not the gap you'd guess. Detecting *what* someone's asking for barely moved — 95%+ either way. Where the small model actually fell down was judging *when to ask a clarifying question instead of confidently guessing*. And the adversarial number is the twist: despite scoring worse overall, the small model shipped fewer silently-wrong diffs than Claude did, because it defaults to asking rather than assuming. Worse extractor, more honest failure mode — a distinction that never would have shown up if I'd only measured raw accuracy.
+
+That clarify-F1 gap turned out to have a precise, fixable cause, not a "small models are just worse" shrug. My synthetic training-data generator enumerates gold examples across a library of fabricated repos, and one code path scaled with corpus size while the "here's an ambiguous request, you should ask a question" and "this is a delete, refuse it" examples were generated at a **flat count of 3 per resource**, regardless of how big everything else got. In the actual corpus that came out to 1,132 confident-answer examples against 66 must-ask-a-question ones — a 17:1 imbalance, and it gets *worse*, not better, as the fabricated repo library grows. A 1.5B model, entirely shaped by this one dataset, dutifully learned the majority lesson: always answer. Two lines of code — scaling those counts with the same knob that scales everything else — took that ratio to under 4:1. Retraining against the fix to confirm the number actually moves is still open; the bug and the fix are both real and already committed.
+
+## A free way to get there, once I stopped being careless
+
+Regenerating that training data means writing a few thousand natural-language tickets from the gold labels, and the tool that does it defaults to a frontier model for phrasing quality. I ran it without checking that default first, for a batch of ticket-rephrasing that didn't need frontier-model reasoning at all, and it burned real money before I caught it and killed it — a genuinely dumb, avoidable mistake, and an instructive one: check what you're about to spend *before* you hit run, not after.
+
+Which is what pushed me to build the option I probably should have had from the start: `--runtime local`, writing every ticket through my own already-running `llama-server` instead of an API call. Free, forever, no key required — which is closer to the actual spirit of "self-hosted" than "self-hosted extraction, but the training data behind it still needs someone else's GPU and credit card."
+
+It did not work on the first try. Left to its own devices, the 1.5B model's instinct — given a spec like "convey these facts: team=infra, purpose=backups" — was to just echo that shape back: `resource bigquery_dataset bigquery_dataset { team = "infra", purpose = "backups" }`. Training on tickets that already look like the answer would have defeated the entire point of the corpus. Telling it not to do that, explicitly, in the system prompt, helped a little and not enough — still an 80% rejection rate on a small test batch. What actually fixed it was two concrete worked examples showing the exact transformation (spec-with-facts *in*, natural sentence *out*) rather than abstract rules about what not to do. That dropped the reject rate to about 5% on a larger run, with a heuristic filter and a corrective retry loop catching everything that still slipped through — skipped and counted, never smuggled into the corpus, the same "Skip with a reason, never lie" instinct the gate pipeline already had.
+
+It's not equivalent to the frontier-model path — noticeably more templated phrasing, real item loss, one call per example instead of Claude's batches of eight — and I've documented that honestly rather than papering over it. But it's a real, working, zero-cost way to close the loop, and it exists specifically because I made a $15 mistake and didn't want to make it twice.
+
 ## What it is, and where it's going
 
 Right now it hangs together as a vertical slice — a CLI, a local web UI, and a GitHub webhook where a `/tfbot <request>` comment on an issue comes back as a pull request. It's honestly still a workbench more than a product: I'm poking at it in the open, mostly to find out which of my assumptions actually survive contact with a real repo. Human review and Atlantis apply stay exactly where they already are — the aim was never to take people out of the loop, only the tedium.
 
-The part I'm most curious about is still ahead of me: whether a small, self-hosted model can handle the extraction step about as well as a frontier one — because *self-hosted, and your repo stays yours* is the pitch that actually matters, and cost is just the bonus. That might mean renting a GPU for an afternoon to fine-tune something with QLoRA, or it might just mean pointing a good open-source model at the IR schema with grammar-constrained decoding and seeing how far honest prompting gets on its own. Either way there's a benchmark waiting at the end — and I'd rather publish the one where the small model loses a couple than the one that's secretly just a screenshot.
+What's actually left is narrower than it used to be: retrain against the rebalanced data and confirm the clarify-F1 gap closes the way the fix predicts, grow the eval corpus, and eventually earn a real name instead of a placeholder that changes with my mood. The self-hosted question isn't hypothetical anymore — I have the numbers, the honest limitations, and a bug-and-fix story I'd rather publish than hide.
 
-The nice part is the deterministic half doesn't care which model wins that experiment: the gates, the AST surgery, the recipe all stay exactly the same. The model is the one swappable piece, which is precisely where I want the uncertainty to live. For now it already does the boring 90% and leaves me the 10% worth doing — and back when that boring 90% *was* the whole Tuesday, that's a trade I'll take.
+The nice part is the deterministic half never had to care which model wins that experiment: the gates, the AST surgery, the recipe all stay exactly the same. The model is the one swappable piece, which is precisely where I want the uncertainty to live. For now it already does the boring 90% and leaves me the 10% worth doing — and back when that boring 90% *was* the whole Tuesday, that's a trade I'll take.
