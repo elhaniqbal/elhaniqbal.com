@@ -22,9 +22,9 @@
     "sharp": "^0.35.4"
   },
   "devDependencies": {
-    "@astrojs/sitemap": "^3.7.3",
-    "@playwright/test": "^1.62.1",
-    "@types/node": "^26.3.0",
+    "@astrojs/sitemap": "^3.7.4",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^26.5.0",
     "typescript": "^7.0.2"
   }
 }
